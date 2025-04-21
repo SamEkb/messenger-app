@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: friends
+  labels:
+    app: friends
+    color: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: friends
+      color: green
+  template:
+    metadata:
+      labels:
+        app: friends
+        color: green
+    spec:
+      containers:
+      - name: friends
+        image: friends-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8003
+          name: http
+        env:
+        - name: PORT
+          value: "8003"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
