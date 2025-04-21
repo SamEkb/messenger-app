@@ -3,14 +3,21 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 )
+
+const PORT = "8002"
 
 func main() {
 	http.HandleFunc("/health/live", liveHandler)
 	http.HandleFunc("/health/ready", readyHandler)
 
-	addr := ":8001"
-	log.Printf("Chat  service listening on %s\n", addr)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = PORT
+	}
+	addr := ":" + port
+	log.Printf("Chat service listening on %s\n", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Chat service failed: %v", err)
 	}
