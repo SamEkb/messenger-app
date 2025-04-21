@@ -1,6 +1,24 @@
 # Kubernetes Deployment Instructions
 
-## Подготовка
+## Полный автоматический деплой
+
+Для автоматического выполнения всех шагов деплоя с помощью одной команды:
+
+```
+make k8s-deploy-all
+```
+
+Эта команда:
+1. Проверяет и запускает Minikube (если не запущен)
+2. Включает Ingress addon
+3. Собирает и загружает Docker-образы
+4. Выполняет Blue-Green деплой 
+5. Добавляет запись в /etc/hosts
+6. Выводит URL'ы для доступа к сервисам
+
+## Подготовка (ручной процесс)
+
+Шаги деплоя вручную:
 
 1. Запустить Minikube:
    ```
@@ -19,12 +37,20 @@
 
 4. Загрузить образы в Minikube:
    ```
+   make k8s-load-images
+   ```
+   или
+   ```
    bash k8s/load-images-to-minikube.sh
    ```
 
 ## Blue-Green Deployment
 
 1. Выполнить деплой:
+   ```
+   make k8s-blue-green
+   ```
+   или
    ```
    bash k8s/green-blue/deploy-to-k8s.sh
    ```
@@ -38,10 +64,18 @@
 
 3. Для переключения на green версию:
    ```
+   make k8s-apply-green
+   ```
+   или
+   ```
    bash k8s/green-blue/apply-green.sh
    ```
 
 4. Для переключения обратно на blue версию:
+   ```
+   make k8s-apply-blue
+   ```
+   или
    ```
    bash k8s/green-blue/apply-blue.sh
    ```
@@ -49,6 +83,10 @@
 ## Canary Deployment
 
 1. Выполнить деплой:
+   ```
+   make k8s-canary
+   ```
+   или
    ```
    bash k8s/canary/deploy-to-k8s.sh
    ```
@@ -58,6 +96,10 @@
 
 2. Для постепенного перехода на новую версию:
    ```
+   make k8s-canary-migrate
+   ```
+   или
+   ```
    bash k8s/canary/gradual-migration.sh
    ```
    
@@ -65,10 +107,18 @@
 
 3. Для быстрого переключения на новую версию:
    ```
+   make k8s-canary-apply
+   ```
+   или
+   ```
    bash k8s/canary/apply-canary.sh
    ```
 
 4. Для отката к предыдущей версии:
+   ```
+   make k8s-canary-rollback
+   ```
+   или
    ```
    bash k8s/canary/rollback-canary.sh
    ```

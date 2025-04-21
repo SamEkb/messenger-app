@@ -168,7 +168,63 @@
    - Users Service: http://localhost:8004
 
 
-4**Остановка сервисов**:
+4. **Остановка сервисов**:
    ```bash
    make down       
    ```
+
+## Развертывание в Kubernetes
+
+Приложение поддерживает разные стратегии деплоя в Kubernetes: Blue-Green и Canary.
+
+### Автоматический полный деплой
+
+Для быстрого развёртывания всего приложения в Kubernetes одной командой:
+
+```bash
+# Полный автоматический деплой (все шаги)
+make k8s-deploy-all
+```
+
+Эта команда выполняет все необходимые шаги:
+1. Проверяет и запускает Minikube (если не запущен)
+2. Включает Ingress addon
+3. Собирает и загружает Docker-образы
+4. Выполняет Blue-Green деплой
+5. Добавляет запись в /etc/hosts
+6. Выводит URL'ы для доступа к сервисам
+
+### Blue-Green Deployment
+
+Стратегия Blue-Green позволяет безопасно обновлять версии приложения, обеспечивая нулевое время простоя.
+
+```bash
+# Деплой в Kubernetes
+make k8s-blue-green
+
+# Переключение на green версию
+make k8s-apply-green
+
+# Переключение на blue версию
+make k8s-apply-blue
+```
+
+### Canary Deployment
+
+Стратегия Canary позволяет постепенно увеличивать трафик на новую версию, минимизируя риски.
+
+```bash
+# Деплой в Kubernetes с канареечным релизом
+make k8s-canary
+
+# Постепенный переход к новой версии
+make k8s-canary-migrate
+
+# Мгновенное переключение на новую версию
+make k8s-canary-apply
+
+# Откат к старой версии
+make k8s-canary-rollback
+```
+
+Для дополнительной информации о Kubernetes-деплое см. [Kubernetes Deployment Instructions](k8s/README.md).
