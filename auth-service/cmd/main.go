@@ -4,13 +4,20 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const PORT = "8001"
 
 func main() {
-	http.HandleFunc("/health/live", liveHandler)
-	http.HandleFunc("/health/ready", readyHandler)
+	r := chi.NewRouter()
+
+	r.Use(middleware.Logger)
+
+	r.Get("/health/live", liveHandler)
+	r.Get("/health/ready", readyHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -18,7 +25,7 @@ func main() {
 	}
 	addr := ":" + port
 	log.Printf("Auth service listening on %s\n", addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Auth service failed: %v", err)
 	}
 }
