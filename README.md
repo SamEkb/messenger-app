@@ -2,7 +2,9 @@
 
 <img alt="img_1.png" height="500" src="img_1.png" width="1000"/>
 
-## API Gateway
+## Архитектура приложения
+
+### API Gateway
 
 **Отвечает за:**
 
@@ -14,7 +16,7 @@
 
 ---
 
-## Auth Service
+### Auth Service
 
 **Отвечает за:**
 
@@ -45,7 +47,7 @@
 
 ---
 
-## Users Service
+### Users Service
 
 **Отвечает за:**
 
@@ -77,7 +79,7 @@
 
 ---
 
-## Friends Service
+### Friends Service
 
 **Отвечает за:**
 
@@ -107,7 +109,7 @@
 
 ---
 
-## Chat Service
+### Chat Service
 
 **Отвечает за:**
 
@@ -137,3 +139,36 @@
     - `GetUserChats(UserID)`
     - `SendMessage(ChatID, AuthorID, Content)`
     - `GetChatHistory(ChatID)`
+
+## Запуск приложения локально с помощью Docker
+
+1. **Клонирование репозитория**:
+   ```bash
+   git clone https://github.com/your-username/messenger-app.git
+   cd messenger-app
+   ```
+
+2. **Запуск всех сервисов через Makefile**:
+   ```bash
+   make build  
+   make up     
+   ```
+
+   Напрямую через Docker Compose:
+   ```bash
+   docker-compose build
+   docker-compose up -d
+   ```
+
+3. **Проверка работоспособности**:
+   Все сервисы будут доступны по следующим адресам:
+   - Auth Service: http://localhost:8001
+   - Chat Service: http://localhost:8002
+   - Friends Service: http://localhost:8003
+   - Users Service: http://localhost:8004
+
+
+4**Остановка сервисов**:
+   ```bash
+   make down       
+   ```
