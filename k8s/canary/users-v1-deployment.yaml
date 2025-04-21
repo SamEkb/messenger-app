@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-v1
+  name: users-v1
   labels:
-    app: auth
+    app: users
     version: v1
 spec:
   replicas: 3
@@ -14,24 +14,24 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: auth
+      app: users
       version: v1
   template:
     metadata:
       labels:
-        app: auth
+        app: users
         version: v1
     spec:
       containers:
-      - name: auth
-        image: auth-service:latest
+      - name: users
+        image: users-service:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8001
+        - containerPort: 8004
           name: http
         env:
         - name: PORT
-          value: "8001"
+          value: "8004"
         resources:
           limits:
             memory: "128Mi"

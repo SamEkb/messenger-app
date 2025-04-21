@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-v1
+  name: friends-v2
   labels:
-    app: auth
-    version: v1
+    app: friends
+    version: v2
 spec:
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -14,24 +14,24 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app: auth
-      version: v1
+      app: friends
+      version: v2
   template:
     metadata:
       labels:
-        app: auth
-        version: v1
+        app: friends
+        version: v2
     spec:
       containers:
-      - name: auth
-        image: auth-service:latest
+      - name: friends
+        image: friends-service:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8001
+        - containerPort: 8003
           name: http
         env:
         - name: PORT
-          value: "8001"
+          value: "8003"
         resources:
           limits:
             memory: "128Mi"
