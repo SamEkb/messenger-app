@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Auth Service
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    networks:
+      - messenger-network
+    restart: on-failure
+
+  # Chat Service
+  chat-service:
+    build:
+      context: ./chat-service
+      dockerfile: Dockerfile
+    container_name: chat-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+    networks:
+      - messenger-network
+    restart: on-failure
+
+  # Friends Service
+  friends-service:
+    build:
+      context: ./friends-service
+      dockerfile: Dockerfile
+    container_name: friends-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+    networks:
+      - messenger-network
+    restart: on-failure
+
+  # Users Service
+  users-service:
+    build:
+      context: ./users-service
+      dockerfile: Dockerfile
+    container_name: users-service
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+    networks:
+      - messenger-network
+    restart: on-failure
+
+networks:
+  messenger-network:
+    driver: bridge
