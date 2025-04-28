@@ -7,27 +7,26 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/SamEkb/messenger-app/pkg/api/auth;auth";
-
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
-    title: "Auth Service";
-    version: "1.0";
+    title: "Auth Service"
+    version: "1.0"
     contact: {
-      name: "Semyon K.";
-      url: "https://github.com/SamEkb";
-      email: "sam.kilanoff@gmail.com";
-    };
+      name: "Semyon K."
+      url: "https://github.com/SamEkb"
+      email: "sam.kilanoff@gmail.com"
+    }
     license: {
-      name: "Apache 2.0";
-      url: "https://www.apache.org/licenses/LICENSE-2.0";
-    };
-  };
+      name: "Apache 2.0"
+      url: "https://www.apache.org/licenses/LICENSE-2.0"
+    }
+  }
   external_docs: {
-    url: "https://github.com/SamEkb/messenger-app";
-    description: "Auth service for educational purpose";
-  };
-  schemes: HTTP;
-  schemes: HTTPS;
+    url: "https://github.com/SamEkb/messenger-app"
+    description: "Auth service for educational purpose"
+  }
+  schemes: HTTP
+  schemes: HTTPS
 };
 
 // AuthService provides methods for user authentication and management.
@@ -35,42 +34,42 @@ service AuthService {
   // Register creates a new user in the system.
   // It accepts user data and returns the registration result.
   rpc Register(RegisterRequest) returns (RegisterResponse) {
-    option(google.api.http) = {
+    option (google.api.http) = {
       post: "/api/v1/auth/register"
       body: "*"
     };
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "Register a new user";
-      description: "Creates a new user account with the provided details.";
+      summary: "Register a new user"
+      description: "Creates a new user account with the provided details."
     };
   }
 
   // Login authenticates a user in the system.
   // It accepts credentials and returns a JWT token for authentication.
   rpc Login(LoginRequest) returns (LoginResponse) {
-    option(google.api.http) = {
+    option (google.api.http) = {
       post: "/api/v1/auth/login"
       body: "*"
     };
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "Log in a user";
-      description: "Authenticates a user with the provided email and password, returning a token.";
+      summary: "Log in a user"
+      description: "Authenticates a user with the provided email and password, returning a token."
     };
   }
 
   // Logout logs out a user from the system.
   // It invalidates the token to prevent further use.
   rpc Logout(LogoutRequest) returns (LogoutResponse) {
-    option(google.api.http) = {
+    option (google.api.http) = {
       post: "/api/v1/auth/logout"
       body: "*"
     };
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "Log out a user";
-      description: "Invalidates the provided user token to log out.";
+      summary: "Log out a user"
+      description: "Invalidates the provided user token to log out."
     };
   }
 }

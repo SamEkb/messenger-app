@@ -55,7 +55,8 @@ buf-breaking: install-buf
 
 buf-generate: install-buf
 	@echo "⇨ Generation buf"
-	@$(LOCAL_BIN)/buf generate --template buf.gen.yaml
+	@export PATH="$(LOCAL_BIN):$$PATH" && \
+	$(LOCAL_BIN)/buf generate --template buf.gen.yaml --path auth_service/v1 --path events/v1
 
 .PHONY: all
 all: .bin-deps vendor buf-lint buf-generate

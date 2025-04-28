@@ -10,6 +10,11 @@ lint:
     - FILE_LOWER_SNAKE_CASE
   ignore:
     - vendor.protobuf
+  ignore_only:
+    PACKAGE_DIRECTORY_MATCH:
+      - auth-service/v1/messages.proto
+      - auth-service/v1/service.proto
+      - events/v1/user_events.proto
 breaking:
   use:
     - FILE
