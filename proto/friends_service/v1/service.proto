@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package friends_service.v1;
 
-import "friends-service/v1/messages.proto";
+import "friends_service/v1/messages.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
@@ -86,7 +86,6 @@ service FriendsService {
   rpc RemoveFriend(RemoveFriendRequest) returns (RemoveFriendResponse) {
     option (google.api.http) = {
       delete: "/api/v1/users/{user_id}/friends"
-      body: "*"
     };
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
