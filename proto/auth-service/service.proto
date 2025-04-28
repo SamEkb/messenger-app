@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package github.com.samekb.messenger_app.auth_service;
 
-import "proto/auth-service/messages.proto";
+import "auth-service/messages.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
-option go_package = "messenger-app/auth-service/pkg/api/auth;auth";
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/auth;auth";
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {

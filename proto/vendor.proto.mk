@@ -6,7 +6,7 @@ vendor:	.vendor-reset .vendor-googleapis .vendor-google-protobuf .vendor-protova
 
 # delete VENDOR_PROTO_PATH
 .vendor-reset:
-	rm -rf $(VENDOR_PROTO_PATH)
+	rm -rf $(VENDOR_PROTO_PATH) || true
 	mkdir -p $(VENDOR_PROTO_PATH)
 
 # Устанавливаем proto описания google/protobuf
@@ -18,7 +18,7 @@ vendor:	.vendor-reset .vendor-googleapis .vendor-google-protobuf .vendor-protova
 	git checkout
 	mkdir -p $(VENDOR_PROTO_PATH)/google/protobuf
 	find $(VENDOR_PROTO_PATH)/protobuf/src/google/protobuf -maxdepth 1 -type f -exec mv {} $(VENDOR_PROTO_PATH)/google/protobuf \;
-	rm -rf $(VENDOR_PROTO_PATH)/protobuf
+	rm -rf $(VENDOR_PROTO_PATH)/protobuf || true
 
 # Устанавливаем proto описания google/api
 .vendor-googleapis:
@@ -29,7 +29,7 @@ vendor:	.vendor-reset .vendor-googleapis .vendor-google-protobuf .vendor-protova
 	git checkout
 	mkdir -p $(VENDOR_PROTO_PATH)/google/api
 	find $(VENDOR_PROTO_PATH)/googleapis/google/api -maxdepth 1 -type f -exec mv {} $(VENDOR_PROTO_PATH)/google/api \;
-	rm -rf $(VENDOR_PROTO_PATH)/googleapis
+	rm -rf $(VENDOR_PROTO_PATH)/googleapis || true
 
 # Устанавливаем proto описания protoc-gen-openapiv2/options
 .vendor-protoc-gen-openapiv2:
@@ -40,7 +40,7 @@ vendor:	.vendor-reset .vendor-googleapis .vendor-google-protobuf .vendor-protova
 	git checkout
 	mkdir -p $(VENDOR_PROTO_PATH)/protoc-gen-openapiv2
 	mv $(VENDOR_PROTO_PATH)/grpc-gateway/protoc-gen-openapiv2/options $(VENDOR_PROTO_PATH)/protoc-gen-openapiv2
-	rm -rf $(VENDOR_PROTO_PATH)/grpc-gateway
+	rm -rf $(VENDOR_PROTO_PATH)/grpc-gateway || true
 
 # Устанавливаем proto описания buf/validate/validate.proto
 .vendor-protovalidate:
@@ -49,13 +49,13 @@ vendor:	.vendor-reset .vendor-googleapis .vendor-google-protobuf .vendor-protova
 	cd $(VENDOR_PROTO_PATH)/protovalidate
 	git checkout
 	mv $(VENDOR_PROTO_PATH)/protovalidate/proto/protovalidate/buf $(VENDOR_PROTO_PATH)
-	rm -rf $(VENDOR_PROTO_PATH)/protovalidate
+	rm -rf $(VENDOR_PROTO_PATH)/protovalidate || true
 
 # delete all non .proto files
 .vendor-tidy:
-	find $(VENDOR_PROTO_PATH) -type f ! -name "*.proto" -delete
-	find $(VENDOR_PROTO_PATH) -type f \( -name "*unittest*.proto" -o -name "*test*.proto" -o -name "*sample*.proto" \) -delete
-	find $(VENDOR_PROTO_PATH) -empty -type d -delete
+	find $(VENDOR_PROTO_PATH) -type f ! -name "*.proto" -delete || true
+	find $(VENDOR_PROTO_PATH) -type f \( -name "*unittest*.proto" -o -name "*test*.proto" -o -name "*sample*.proto" \) -delete || true
+	find $(VENDOR_PROTO_PATH) -empty -type d -delete || true
 
 
 # Объявляем, что текущие команды не являются файлами и
