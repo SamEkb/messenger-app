@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package github.com.samekb.messenger_app.events;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "messenger-app/pkg/events;events";
+
+// New user registered event
+message UserRegisteredEvent {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  google.protobuf.Timestamp registered_at = 4;
+}
