@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package events.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/events;events";
+
+// UserRegisteredEvent represents an event generated when a new user registers.
+message UserRegisteredEvent {
+  // Unique identifier of the registered user.
+  string user_id = 1;
+  // Username for display in the system.
+  string username = 2;
+  // User's email address.
+  string email = 3;
+  // Time when the user registered.
+  google.protobuf.Timestamp registered_at = 4;
+}

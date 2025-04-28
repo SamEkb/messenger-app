@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package github.com.samekb.messenger_app.auth_service;
+package auth_service.v1;
 
-import "auth-service/messages.proto";
+import "auth_service/v1/messages.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
@@ -30,7 +30,10 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   schemes: HTTPS;
 };
 
+// AuthService provides methods for user authentication and management.
 service AuthService {
+  // Register creates a new user in the system.
+  // It accepts user data and returns the registration result.
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option(google.api.http) = {
       post: "/api/v1/auth/register"
@@ -43,6 +46,8 @@ service AuthService {
     };
   }
 
+  // Login authenticates a user in the system.
+  // It accepts credentials and returns a JWT token for authentication.
   rpc Login(LoginRequest) returns (LoginResponse) {
     option(google.api.http) = {
       post: "/api/v1/auth/login"
@@ -55,6 +60,8 @@ service AuthService {
     };
   }
 
+  // Logout logs out a user from the system.
+  // It invalidates the token to prevent further use.
   rpc Logout(LogoutRequest) returns (LogoutResponse) {
     option(google.api.http) = {
       post: "/api/v1/auth/logout"
