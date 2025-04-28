@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package friends_service.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/friends;friends";
+
+// Friendship status enum
+enum FriendshipStatus {
+  // Default value, should not be used
+  FRIENDSHIP_STATUS_UNSPECIFIED = 0;
+  // Friend request has been sent, pending acceptance
+  FRIENDSHIP_STATUS_REQUESTED = 1;
+  // Friend request has been accepted
+  FRIENDSHIP_STATUS_ACCEPTED = 2;
+  // Friend request has been rejected
+  FRIENDSHIP_STATUS_REJECTED = 3;
+}
+
+// GetFriendsListRequest represents a request to get user's friends list.
+message GetFriendsListRequest {
+  // Unique identifier of the user
+  string user_id = 1;
+}
+
+// FriendInfo represents information about a friend
+message FriendInfo {
+  // Unique identifier of the friend
+  string user_id = 1;
+  // Friend's nickname
+  string nickname = 2;
+  // URL to friend's avatar
+  string avatar_url = 3;
+  // Friendship status
+  FriendshipStatus status = 4;
+  // When the friendship was created
+  google.protobuf.Timestamp created_at = 5;
+  // When the friendship status was last updated
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// GetFriendsListResponse represents a response to get user's friends list.
+message GetFriendsListResponse {
+  // List of friends
+  repeated FriendInfo friends = 1;
+}
+
+// SendFriendRequestRequest represents a request to send friend request.
+message SendFriendRequestRequest {
+  // Unique identifier of the user sending the request
+  string user_id = 1;
+  // Nickname of the user to send friend request to
+  string friend_nickname = 2;
+}
+
+// SendFriendRequestResponse represents a response to send friend request.
+message SendFriendRequestResponse {
+  // Informational message about the operation result
+  string message = 1;
+  // Flag indicating operation success
+  bool success = 2;
+}
+
+// AcceptFriendRequestRequest represents a request to accept friend request.
+message AcceptFriendRequestRequest {
+  // Unique identifier of the user accepting the request
+  string user_id = 1;
+  // Nickname of the user whose request is being accepted
+  string friend_nickname = 2;
+}
+
+// AcceptFriendRequestResponse represents a response to accept friend request.
+message AcceptFriendRequestResponse {
+  // Informational message about the operation result
+  string message = 1;
+  // Flag indicating operation success
+  bool success = 2;
+}
+
+// RejectFriendRequestRequest represents a request to reject friend request.
+message RejectFriendRequestRequest {
+  // Unique identifier of the user rejecting the request
+  string user_id = 1;
+  // Nickname of the user whose request is being rejected
+  string friend_nickname = 2;
+}
+
+// RejectFriendRequestResponse represents a response to reject friend request.
+message RejectFriendRequestResponse {
+  // Informational message about the operation result
+  string message = 1;
+  // Flag indicating operation success
+  bool success = 2;
+}
+
+// RemoveFriendRequest represents a request to remove a friend.
+message RemoveFriendRequest {
+  // Unique identifier of the user removing a friend
+  string user_id = 1;
+  // Nickname of the user being removed
+  string friend_nickname = 2;
+}
+
+// RemoveFriendResponse represents a response to remove a friend.
+message RemoveFriendResponse {
+  // Informational message about the operation result
+  string message = 1;
+  // Flag indicating operation success
+  bool success = 2;
+}
+
+// CheckFriendshipStatusRequest represents a request to check friendship status.
+message CheckFriendshipStatusRequest {
+  // Unique identifier of the first user
+  string user_id = 1;
+  // Unique identifier of the second user
+  string friend_id = 2;
+}
+
+// CheckFriendshipStatusResponse represents a response to check friendship status.
+message CheckFriendshipStatusResponse {
+  // Friendship status
+  FriendshipStatus status = 1;
+  // When the friendship was created
+  google.protobuf.Timestamp created_at = 2;
+  // When the friendship status was last updated
+  google.protobuf.Timestamp updated_at = 3;
+}

@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package friends_service.v1;
+
+import "friends-service/v1/messages.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/friends;friends";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Friends Service"
+    version: "1.0"
+    contact: {
+      name: "Semyon K."
+      url: "https://github.com/SamEkb"
+      email: "sam.kilanoff@gmail.com"
+    }
+    license: {
+      name: "Apache 2.0"
+      url: "https://www.apache.org/licenses/LICENSE-2.0"
+    }
+  }
+  external_docs: {
+    url: "https://github.com/SamEkb/messenger-app"
+    description: "Friends service for educational purpose"
+  }
+  schemes: HTTP
+  schemes: HTTPS
+};
+
+// FriendsService provides methods for friend management.
+service FriendsService {
+  // GetFriendsList retrieves the list of friends for a user.
+  rpc GetFriendsList(GetFriendsListRequest) returns (GetFriendsListResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}/friends"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get user's friends list"
+      description: "Returns the list of friends and pending friend requests for a user."
+    };
+  }
+
+  // SendFriendRequest sends a friend request to another user.
+  rpc SendFriendRequest(SendFriendRequestRequest) returns (SendFriendRequestResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/{user_id}/friends/requests"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Send a friend request"
+      description: "Sends a friend request to another user by nickname."
+    };
+  }
+
+  // AcceptFriendRequest accepts a pending friend request.
+  rpc AcceptFriendRequest(AcceptFriendRequestRequest) returns (AcceptFriendRequestResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/users/{user_id}/friends/requests/accept"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Accept a friend request"
+      description: "Accepts a pending friend request from another user."
+    };
+  }
+
+  // RejectFriendRequest rejects a pending friend request.
+  rpc RejectFriendRequest(RejectFriendRequestRequest) returns (RejectFriendRequestResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/users/{user_id}/friends/requests/reject"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Reject a friend request"
+      description: "Rejects a pending friend request from another user."
+    };
+  }
+
+  // RemoveFriend removes a user from the friends list.
+  rpc RemoveFriend(RemoveFriendRequest) returns (RemoveFriendResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/users/{user_id}/friends"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Remove a friend"
+      description: "Removes a user from the friends list."
+    };
+  }
+
+  // CheckFriendshipStatus checks the friendship status between two users.
+  // This is an internal API used by other services.
+  rpc CheckFriendshipStatus(CheckFriendshipStatusRequest) returns (CheckFriendshipStatusResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/friendships/status"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Check friendship status"
+      description: "Checks the friendship status between two users."
+    };
+  }
+}

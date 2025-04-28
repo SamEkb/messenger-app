@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package chat_service.v1;
+
+import "chat-service/v1/messages.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/chat;chat";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Chat Service"
+    version: "1.0"
+    contact: {
+      name: "Semyon K."
+      url: "https://github.com/SamEkb"
+      email: "sam.kilanoff@gmail.com"
+    }
+    license: {
+      name: "Apache 2.0"
+      url: "https://www.apache.org/licenses/LICENSE-2.0"
+    }
+  }
+  external_docs: {
+    url: "https://github.com/SamEkb/messenger-app"
+    description: "Chat service for educational purpose"
+  }
+  schemes: HTTP
+  schemes: HTTPS
+};
+
+// ChatService provides methods for chat management and messaging.
+service ChatService {
+  // CreateChat creates a new chat between users.
+  rpc CreateChat(CreateChatRequest) returns (CreateChatResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/chats"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create a new chat"
+      description: "Creates a new chat with the specified participants."
+    };
+  }
+
+  // GetUserChats retrieves all chats where the user is a participant.
+  rpc GetUserChats(GetUserChatsRequest) returns (GetUserChatsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}/chats"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get user chats"
+      description: "Returns all chats where the user is a participant."
+    };
+  }
+
+  // SendMessage sends a message to a chat.
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/chats/{chat_id}/messages"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Send a message"
+      description: "Sends a new message to the specified chat."
+    };
+  }
+
+  // GetChatHistory retrieves message history for a chat.
+  rpc GetChatHistory(GetChatHistoryRequest) returns (GetChatHistoryResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/chats/{chat_id}/messages"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get chat history"
+      description: "Retrieves message history for the specified chat."
+    };
+  }
+}

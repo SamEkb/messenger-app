@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package chat_service.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/chat;chat";
+
+// CreateChatRequest represents a request to create a new chat between users.
+message CreateChatRequest {
+  // List of user IDs participating in the chat.
+  repeated string participants = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CreateChatResponse represents a response to a chat creation request.
+message CreateChatResponse {
+  // Unique identifier of the created chat.
+  string chat_id = 1;
+  // Flag indicating operation success.
+  bool success = 2;
+  // Informational message about the operation result.
+  string message = 3;
+}
+
+// GetUserChatsRequest represents a request to get all chats for a user.
+message GetUserChatsRequest {
+  // User ID for which to retrieve chats.
+  string user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Chat represents a chat entity with basic information.
+message Chat {
+  // Unique identifier of the chat.
+  string chat_id = 1;
+  // List of user IDs participating in the chat.
+  repeated string participants = 2;
+  // Basic information about the last message in the chat.
+  Message last_message = 3;
+}
+
+// GetUserChatsResponse represents a response containing all user's chats.
+message GetUserChatsResponse {
+  // List of chats where the user is a participant.
+  repeated Chat chats = 1;
+}
+
+// Message represents a chat message.
+message Message {
+  // Unique identifier of the message.
+  string message_id = 1;
+  // ID of the chat this message belongs to.
+  string chat_id = 2;
+  // ID of the user who sent the message.
+  string author_id = 3;
+  // Content of the message.
+  string content = 4;
+  // Time when the message was sent.
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// SendMessageRequest represents a request to send a message to a chat.
+message SendMessageRequest {
+  // ID of the chat where to send the message.
+  string chat_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // ID of the user sending the message.
+  string author_id = 2 [(google.api.field_behavior) = REQUIRED];
+  // Content of the message.
+  string content = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// SendMessageResponse represents a response to a message sending request.
+message SendMessageResponse {
+  // The sent message details.
+  Message message = 1;
+  // Flag indicating operation success.
+  bool success = 2;
+  // Informational message about the operation result.
+  string message_info = 3;
+}
+
+// GetChatHistoryRequest represents a request to get chat message history.
+message GetChatHistoryRequest {
+  // ID of the chat to retrieve history for.
+  string chat_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Optional parameter to limit number of messages.
+  int32 limit = 2;
+  // Optional parameter for pagination (offset from newest).
+  int32 offset = 3;
+}
+
+// GetChatHistoryResponse represents a response containing chat message history.
+message GetChatHistoryResponse {
+  // List of messages in the chat history.
+  repeated Message messages = 1;
+  // Total number of messages in the chat.
+  int32 total_messages = 2;
+}

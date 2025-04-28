@@ -47,7 +47,7 @@ vendor:
 buf-lint: install-buf
 	@echo "⇨ Launching buf lint"
 	@chmod +x $(LOCAL_BIN)/buf || true
-	@$(LOCAL_BIN)/buf lint --path auth-service --path chat-service --path events --path friends-service --path users-service
+	@$(LOCAL_BIN)/buf lint --path auth_service --path chat_service --path events --path friends_service --path users_service
 
 buf-breaking: install-buf
 	@echo "⇨ Checking breaking changes"
@@ -56,7 +56,7 @@ buf-breaking: install-buf
 buf-generate: install-buf
 	@echo "⇨ Generation buf"
 	@export PATH="$(LOCAL_BIN):$$PATH" && \
-	$(LOCAL_BIN)/buf generate --template buf.gen.yaml --path auth_service/v1 --path events/v1
+	$(LOCAL_BIN)/buf generate --template buf.gen.yaml --path auth_service/v1 --path events/v1 --path users_service/v1 --path chat_service/v1 --path friends_service/v1
 
 .PHONY: all
 all: .bin-deps vendor buf-lint buf-generate

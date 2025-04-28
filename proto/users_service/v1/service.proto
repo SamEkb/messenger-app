@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package users_service.v1;
+
+import "users_service/v1/messages.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/users;users";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Users Service"
+    version: "1.0"
+    contact: {
+      name: "Semyon K."
+      url: "https://github.com/SamEkb"
+      email: "sam.kilanoff@gmail.com"
+    }
+    license: {
+      name: "Apache 2.0"
+      url: "https://www.apache.org/licenses/LICENSE-2.0"
+    }
+  }
+  external_docs: {
+    url: "https://github.com/SamEkb/messenger-app"
+    description: "Users service for educational purpose"
+  }
+  schemes: HTTP
+  schemes: HTTPS
+};
+
+// UsersService provides methods for action with user's profile.
+service UsersService {
+  // GetUserProfile provides user's profile by users id.
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Provides user's profile by id"
+      description: "Provides user's profile details by id"
+    };
+  }
+
+  // GetUserProfileByNickname provides user's profile by users nickname.
+  rpc GetUserProfileByNickname(GetUserProfileByNicknameRequest) returns (GetUserProfileByNicknameResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{nickname}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Provides user's profile by nickname"
+      description: "Provides user's profile details by nickname"
+    };
+  }
+
+  // UpdateUserProfile provides user's profile updating.
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/users"
+      body: "*"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Provides user's profile by id"
+      description: "Provides user's profile details by id"
+    };
+  }
+}
