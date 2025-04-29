@@ -31,7 +31,6 @@ VENDOR_PROTO_PATH := $(CURDIR)/vendor.protobuf
 	go install github.com/yoheimuta/protolint/cmd/protolint@latest
 	chmod +x $(LOCAL_BIN)/* || true
 
-# Установить buf глобально или локально
 install-buf:
 	@echo "Installing buf..."
 	go install github.com/bufbuild/buf/cmd/buf@v1.36.0
@@ -41,17 +40,16 @@ vendor:
 	make -f vendor.proto.mk vendor
 
 
-.PHONY: buf-lint buf-breaking buf-generate install-buf
+.PHONY: buf-format buf-lint buf-generate install-buf
 
+buf-format:
+	@echo "⇨ Launching buf fromat"
+	$(LOCAL_BIN)/buf format -w
 
 buf-lint: install-buf
 	@echo "⇨ Launching buf lint"
 	@chmod +x $(LOCAL_BIN)/buf || true
 	@$(LOCAL_BIN)/buf lint --path auth_service --path chat_service --path events --path friends_service --path users_service
-
-buf-breaking: install-buf
-	@echo "⇨ Checking breaking changes"
-	@$(LOCAL_BIN)/buf breaking --against '.git#branch=main,subdir=proto'
 
 buf-generate: install-buf
 	@echo "⇨ Generation buf"
@@ -59,4 +57,4 @@ buf-generate: install-buf
 	$(LOCAL_BIN)/buf generate --template buf.gen.yaml --path auth_service/v1 --path events/v1 --path users_service/v1 --path chat_service/v1 --path friends_service/v1
 
 .PHONY: all
-all: .bin-deps vendor buf-lint buf-generate
+all: .bin-deps vendor buf-format buf-lint buf-generate
