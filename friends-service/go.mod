@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/SamEkb/messenger-app/pkg/api v0.0.0-00010101000000-000000000000
 	github.com/bufbuild/protovalidate-go v0.10.0
+	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	google.golang.org/grpc v1.72.0
