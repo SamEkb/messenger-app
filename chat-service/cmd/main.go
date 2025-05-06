@@ -1,41 +1,35 @@
 package main
 
 import (
+	"context"
 	"log"
-	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/SamEkb/messenger-app/chat-service/internal/server"
 )
 
-const PORT = "8002"
-
 func main() {
-	r := chi.NewRouter()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	r.Use(middleware.Logger)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigCh
+		log.Println("received shutdown signal")
+		cancel()
+	}()
 
-	r.Get("/health/live", liveHandler)
-	r.Get("/health/ready", readyHandler)
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = PORT
+	server, err := server.NewServer()
+	if err != nil {
+		log.Fatalf("server init error: %v", err)
 	}
-	addr := ":" + port
-	log.Printf("Chat service listening on %s\n", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatalf("Chat service failed: %v", err)
+	defer server.Close()
+
+	// Run gRPC and HTTP servers
+	if err := server.RunServers(ctx); err != nil {
+		log.Fatalf("server run error: %v", err)
 	}
-}
-
-func liveHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-}
-
-func readyHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Ready"))
 }

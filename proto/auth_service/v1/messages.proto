@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package auth_service.v1;
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/auth;auth";
+
+// RegisterRequest represents a request to register a new user.
+message RegisterRequest {
+  // Username for display in the system.
+  string username = 1;
+  // User's email address, used for authentication.
+  string email = 2;
+  // User's password in plain text (not hashed).
+  string password = 3;
+}
+
+// RegisterResponse represents the response to a user registration request.
+message RegisterResponse {
+  // Unique identifier of the created user.
+  string user_id = 1;
+  // Informational message about the operation result.
+  string message = 2;
+  // Flag indicating operation success.
+  bool success = 3;
+}
+
+// LoginRequest represents a request to authenticate a user.
+message LoginRequest {
+  // User's email address for login.
+  string email = 1;
+  // User's password.
+  string password = 2;
+}
+
+// LoginResponse represents the response to an authentication request.
+message LoginResponse {
+  // JWT token for authenticating subsequent requests.
+  string token = 1;
+  // Unique identifier of the authenticated user.
+  string user_id = 2;
+  // Token expiration time as Unix timestamp.
+  int64 expires_at = 3;
+  // Flag indicating authentication success.
+  bool success = 4;
+  // Informational message about the operation result.
+  string message = 5;
+}
+
+// LogoutRequest represents a request to log out from the system.
+message LogoutRequest {
+  // JWT token to be invalidated.
+  string token = 1;
+}
+
+// LogoutResponse represents the response to a logout request.
+message LogoutResponse {
+  // Flag indicating logout success.
+  bool success = 1;
+  // Informational message about the operation result.
+  string message = 2;
+}

@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package users_service.v1;
+
+import "google/api/field_behavior.proto";
+
+option go_package = "github.com/SamEkb/messenger-app/pkg/api/users;users";
+
+// GetUserProfileRequest represents a request to get user's profile.
+message GetUserProfileRequest {
+  // Unique identifier of the user.
+  string user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetUserProfileResponse represents a response to get user's profile.
+message GetUserProfileResponse {
+  // Nickname for display in the system.
+  string nickname = 1;
+  // User's email address, used for authentication.
+  string email = 2;
+  // User's description
+  string description = 3;
+  // Url of user's avatar
+  string avatar_url = 4;
+}
+
+// GetUserProfileByNicknameRequest represents a request to get user's profile by nickname.
+message GetUserProfileByNicknameRequest {
+  // Nickname for display in the system.
+  string nickname = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetUserProfileByNicknameResponse represents a response to get user's profile by nickname.
+message GetUserProfileByNicknameResponse {
+  // Nickname for display in the system.
+  string nickname = 1;
+  // User's email address, used for authentication.
+  string email = 2;
+  // User's description
+  string description = 3;
+  // Url of user's avatar
+  string avatar_url = 4;
+}
+
+// UpdateUserProfileRequest represents a request to update user's profile.
+message UpdateUserProfileRequest {
+  // Unique identifier of the user.
+  string user_id = 1;
+  // Username for display in the system.
+  string nickname = 2;
+  // User's email address, used for authentication.
+  string email = 3;
+  // User's description
+  string description = 4;
+  // Url of user's avatar
+  string avatar_url = 5;
+}
+
+// UpdateUserProfileResponse represents a response of user's profile updating.
+message UpdateUserProfileResponse {
+  // Informational message about the operation result.
+  string message = 1;
+  // Flag indicating operation success.
+  bool success = 2;
+}
