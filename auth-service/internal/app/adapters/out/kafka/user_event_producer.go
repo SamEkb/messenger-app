@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
 	"github.com/Shopify/sarama"
@@ -19,8 +20,8 @@ type UserEventsKafkaProducer struct {
 	topic    string
 }
 
-func NewUserEventsKafkaProducer(cfg sarama.Config, brokers []string, topic string, logger *log.Logger) (*UserEventsKafkaProducer, error) {
-	producer, err := sarama.NewSyncProducer(brokers, &cfg)
+func NewUserEventsKafkaProducer(cfg sarama.Config, kafkaCfg *env.KafkaConfig, logger *log.Logger) (*UserEventsKafkaProducer, error) {
+	producer, err := sarama.NewSyncProducer(kafkaCfg.Brokers, &cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
@@ -28,7 +29,7 @@ func NewUserEventsKafkaProducer(cfg sarama.Config, brokers []string, topic strin
 	return &UserEventsKafkaProducer{
 		producer: producer,
 		logger:   logger,
-		topic:    topic,
+		topic:    kafkaCfg.Topic,
 	}, nil
 }
 
