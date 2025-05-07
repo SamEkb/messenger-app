@@ -21,7 +21,7 @@ var (
 	_ ports.AuthRepository = (*AuthRepository)(nil)
 )
 
-func NewRepository() *AuthRepository {
+func NewAuthRepository() *AuthRepository {
 	return &AuthRepository{
 		storage: make(map[models.UserID]*models.User),
 	}

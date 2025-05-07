@@ -7,7 +7,7 @@ import (
 )
 
 type AuthUseCase interface {
-	Login(ctx context.Context, dto *LoginDto) (*models.Token, error)
+	Login(ctx context.Context, dto *LoginDto) (models.Token, error)
 	Register(ctx context.Context, dto *RegisterDto) (*models.User, error)
 	Logout(ctx context.Context, token models.Token) error
 }
