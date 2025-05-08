@@ -20,10 +20,12 @@ type UserEventsKafkaProducer struct {
 	topic    string
 }
 
-func NewUserEventsKafkaProducer(cfg *sarama.Config, kafkaCfg *env.KafkaConfig, logger *slog.Logger) (*UserEventsKafkaProducer, error) {
-	if cfg == nil {
+func NewUserEventsKafkaProducer(kafkaCfg *env.KafkaConfig, logger *slog.Logger) (*UserEventsKafkaProducer, error) {
+	if kafkaCfg == nil {
 		panic("kafka config is nil")
 	}
+
+	cfg := NewSaramaConfig(kafkaCfg, logger)
 
 	producer, err := sarama.NewSyncProducer(kafkaCfg.Brokers, cfg)
 	if err != nil {

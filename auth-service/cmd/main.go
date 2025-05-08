@@ -8,7 +8,6 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/in_memory"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
 	"github.com/SamEkb/messenger-app/auth-service/pkg/logger"
-	"github.com/Shopify/sarama"
 )
 
 func main() {
@@ -26,7 +25,7 @@ func main() {
 	authRepository := in_memory.NewAuthRepository(log)
 	tokenRepository := in_memory.NewTokenRepository(log)
 
-	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(nil, config.Kafka, log)
+	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
 	if err != nil {
 		log.Error("failed to create Kafka producer", "error", err)
 		panic(err)
