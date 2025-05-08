@@ -2,19 +2,13 @@ package main
 
 import (
 	"context"
-	"log/slog"
-	"os"
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/out/kafka"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/in_memory"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
-)
-
-const (
-	envLocal = "local"
-	envDev   = "dev"
-	envProd  = "prod"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/logger"
+	"github.com/Shopify/sarama"
 )
 
 func main() {
@@ -26,39 +20,26 @@ func main() {
 		panic(err)
 	}
 
-	logger := setupLogger(config.Debug)
+	log := logger.NewLogger(config.Debug, config.AppName)
+	log.Info("starting auth service")
 
-	authRepository := in_memory.NewAuthRepository()
-	tokenRepository := in_memory.NewTokenRepository()
+	authRepository := in_memory.NewAuthRepository(log)
+	tokenRepository := in_memory.NewTokenRepository(log)
 
-	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(nil, config.Kafka, logger)
+	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(nil, config.Kafka, log)
 	if err != nil {
+		log.Error("failed to create Kafka producer", "error", err)
 		panic(err)
 	}
 	defer userEventPublisher.Close()
 
-	usecase := auth.NewAuthUseCase(authRepository, tokenRepository, userEventPublisher, config.Auth.TokenTTL)
+	usecase := auth.NewAuthUseCase(
+		authRepository,
+		tokenRepository,
+		userEventPublisher,
+		config.Auth.TokenTTL,
+		log,
+	)
 
 	_ := usecase
-}
-
-func setupLogger(env string) *slog.Logger {
-	var log *slog.Logger
-
-	switch env {
-	case envLocal:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
-	case envDev:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
-	case envProd:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
-	}
-
-	return log
 }

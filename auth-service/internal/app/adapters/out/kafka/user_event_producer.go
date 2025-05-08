@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
@@ -16,26 +16,33 @@ var _ ports.UserEventsKafkaProducer = (*UserEventsKafkaProducer)(nil)
 
 type UserEventsKafkaProducer struct {
 	producer sarama.SyncProducer
-	logger   *log.Logger
+	logger   *slog.Logger
 	topic    string
 }
 
-func NewUserEventsKafkaProducer(cfg sarama.Config, kafkaCfg *env.KafkaConfig, logger *log.Logger) (*UserEventsKafkaProducer, error) {
-	producer, err := sarama.NewSyncProducer(kafkaCfg.Brokers, &cfg)
+func NewUserEventsKafkaProducer(cfg *sarama.Config, kafkaCfg *env.KafkaConfig, logger *slog.Logger) (*UserEventsKafkaProducer, error) {
+	if cfg == nil {
+		panic("kafka config is nil")
+	}
+
+	producer, err := sarama.NewSyncProducer(kafkaCfg.Brokers, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
 
 	return &UserEventsKafkaProducer{
 		producer: producer,
-		logger:   logger,
+		logger:   logger.With("component", "kafka_producer"),
 		topic:    kafkaCfg.Topic,
 	}, nil
 }
 
 func (p *UserEventsKafkaProducer) ProduceUserRegisteredEvent(ctx context.Context, event *events.UserRegisteredEvent) error {
+	p.logger.Debug("preparing to produce user registered event", "user_id", event.GetUserId())
+
 	data, err := json.Marshal(event)
 	if err != nil {
+		p.logger.Error("failed to marshal event", "error", err)
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
@@ -57,17 +64,23 @@ func (p *UserEventsKafkaProducer) ProduceUserRegisteredEvent(ctx context.Context
 
 	select {
 	case <-ctx.Done():
+		p.logger.Warn("message sending aborted", "error", ctx.Err())
 		return fmt.Errorf("message sending aborted: %w", ctx.Err())
 	case <-doneCh:
 		if sendErr != nil {
+			p.logger.Error("failed to send message", "error", sendErr)
 			return fmt.Errorf("failed to send message: %w", sendErr)
 		}
-		p.logger.Printf("Published UserRegisteredEvent for user %s to partition %d at offset %d",
-			event.GetUserId(), partition, offset)
+		p.logger.Info("published UserRegisteredEvent",
+			"user_id", event.GetUserId(),
+			"partition", partition,
+			"offset", offset,
+			"topic", p.topic)
 		return nil
 	}
 }
 
 func (p *UserEventsKafkaProducer) Close() error {
+	p.logger.Info("closing kafka producer")
 	return p.producer.Close()
 }

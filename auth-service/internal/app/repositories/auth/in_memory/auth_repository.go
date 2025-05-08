@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
@@ -15,15 +16,17 @@ var _ ports.AuthRepository = (*AuthRepository)(nil)
 type AuthRepository struct {
 	mx      sync.Mutex
 	storage map[models.UserID]*models.User
+	logger  *slog.Logger
 }
 
-var (
-	_ ports.AuthRepository = (*AuthRepository)(nil)
-)
+func NewAuthRepository(logger *slog.Logger) *AuthRepository {
+	if logger == nil {
+		logger = slog.New(slog.NewTextHandler(nil, nil))
+	}
 
-func NewAuthRepository() *AuthRepository {
 	return &AuthRepository{
 		storage: make(map[models.UserID]*models.User),
+		logger:  logger.With("component", "auth_repository"),
 	}
 }
 
@@ -31,11 +34,16 @@ func (r *AuthRepository) Create(ctx context.Context, user *models.User) error {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
-	if user, _ := r.FindUserByEmail(ctx, user.Email()); user != nil {
-		return errors.New("user with this username already exists")
+	r.logger.Debug("attempting to create new user", "user_id", user.ID(), "email", user.Email())
+
+	existingUser, _ := r.FindUserByEmail(ctx, user.Email())
+	if existingUser != nil {
+		r.logger.Warn("user with this email already exists", "email", user.Email())
+		return errors.New("user with this email already exists")
 	}
 
 	r.storage[user.ID()] = user
+	r.logger.Info("user created successfully", "user_id", user.ID(), "email", user.Email())
 	return nil
 }
 
@@ -43,31 +51,39 @@ func (r *AuthRepository) FindUserByID(ctx context.Context, userID models.UserID)
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
+	r.logger.Debug("looking for user by ID", "user_id", userID)
+
 	user, ok := r.storage[userID]
 	if !ok {
+		r.logger.Debug("user not found", "user_id", userID)
 		return nil, errors.New("user not found")
 	}
 
+	r.logger.Debug("user found", "user_id", userID, "email", user.Email())
 	return user, nil
 }
 
-func (r *AuthRepository) FindUserByEmail(ctx context.Context, username string) (*models.User, error) {
+func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
+
+	r.logger.Debug("looking for user by email", "email", email)
 
 	var user *models.User
 	for id := range r.storage {
 		currentUser := r.storage[id]
-		if r.storage[id].Username() == username {
+		if r.storage[id].Email() == email {
 			user = currentUser
 			break
 		}
 	}
 
 	if user == nil {
-		return nil, fmt.Errorf("user with this username: %s not found", username)
+		r.logger.Debug("user not found", "email", email)
+		return nil, fmt.Errorf("user with this email: %s not found", email)
 	}
 
+	r.logger.Debug("user found", "user_id", user.ID(), "email", email)
 	return user, nil
 }
 
@@ -75,11 +91,15 @@ func (r *AuthRepository) Update(ctx context.Context, user *models.User) error {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
+	r.logger.Debug("attempting to update user", "user_id", user.ID())
+
 	if _, ok := r.storage[user.ID()]; !ok {
+		r.logger.Debug("user not found for update", "user_id", user.ID())
 		return errors.New("user not found")
 	}
 
 	r.storage[user.ID()] = user
+	r.logger.Info("user updated successfully", "user_id", user.ID())
 
 	return nil
 }

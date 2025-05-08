@@ -2,38 +2,56 @@ package auth
 
 import (
 	"context"
-	"errors"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (*models.User, error) {
-	user, err := a.authRepo.FindUserByEmail(ctx, dto.Email)
-	if err == nil {
-		return nil, err
-	}
+func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.UserID, error) {
+	a.logger.Debug("register attempt", "username", dto.Username, "email", dto.Email)
 
-	if user != nil {
-		return nil, errors.New("user with this email already exists")
-	}
-
+	// Хешируем пароль
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		a.logger.Error("failed to hash password", "error", err)
+		return "", err
 	}
 
-	id := uuid.New()
-	newUser, err := models.NewUser(models.UserID(id), dto.Username, dto.Email, hashedPassword)
+	// Создаем пользователя
+	user, err := models.NewUser(
+		models.UserID(uuid.New().String()),
+		dto.Username,
+		dto.Email,
+		string(hashedPassword),
+	)
 	if err != nil {
-		return nil, err
+		a.logger.Error("failed to create user model", "error", err)
+		return "", err
 	}
 
-	if err = a.authRepo.Create(ctx, newUser); err != nil {
-		return nil, err
+	// Сохраняем пользователя
+	if err = a.authRepo.Create(ctx, user); err != nil {
+		a.logger.Error("failed to save user", "error", err)
+		return "", err
 	}
 
-	return newUser, nil
+	// Публикуем событие о регистрации пользователя
+	event := &events.UserRegisteredEvent{
+		UserId:       string(user.ID()),
+		Username:     user.Username(),
+		Email:        user.Email(),
+		RegisteredAt: timestamppb.Now(),
+	}
+
+	if err = a.userEventPublisher.ProduceUserRegisteredEvent(ctx, event); err != nil {
+		a.logger.Warn("failed to publish user registration event", "error", err, "user_id", user.ID())
+		// Не возвращаем ошибку, так как регистрация завершилась успешно
+	}
+
+	a.logger.Info("user registered successfully", "user_id", user.ID(), "username", user.Username(), "email", user.Email())
+	return user.ID(), nil
 }
