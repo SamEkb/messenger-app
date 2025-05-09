@@ -2,13 +2,13 @@ package in_memory
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"log/slog"
 	"sync"
+
+	"log/slog"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 )
 
 var _ ports.AuthRepository = (*AuthRepository)(nil)
@@ -39,7 +39,8 @@ func (r *AuthRepository) Create(ctx context.Context, user *models.User) error {
 	existingUser, _ := r.FindUserByEmail(ctx, user.Email())
 	if existingUser != nil {
 		r.logger.Warn("user with this email already exists", "email", user.Email())
-		return errors.New("user with this email already exists")
+		return errors.NewAlreadyExistsError("user with email %s already exists", user.Email()).
+			WithDetails("email", user.Email())
 	}
 
 	r.storage[user.ID()] = user
@@ -56,7 +57,8 @@ func (r *AuthRepository) FindUserByID(ctx context.Context, userID models.UserID)
 	user, ok := r.storage[userID]
 	if !ok {
 		r.logger.Debug("user not found", "user_id", userID)
-		return nil, errors.New("user not found")
+		return nil, errors.NewNotFoundError("user with ID %s not found", userID.String()).
+			WithDetails("user_id", userID.String())
 	}
 
 	r.logger.Debug("user found", "user_id", userID, "email", user.Email())
@@ -80,7 +82,8 @@ func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (*mo
 
 	if user == nil {
 		r.logger.Debug("user not found", "email", email)
-		return nil, fmt.Errorf("user with this email: %s not found", email)
+		return nil, errors.NewNotFoundError("user with email %s not found", email).
+			WithDetails("email", email)
 	}
 
 	r.logger.Debug("user found", "user_id", user.ID(), "email", email)
@@ -95,7 +98,8 @@ func (r *AuthRepository) Update(ctx context.Context, user *models.User) error {
 
 	if _, ok := r.storage[user.ID()]; !ok {
 		r.logger.Debug("user not found for update", "user_id", user.ID())
-		return errors.New("user not found")
+		return errors.NewNotFoundError("user with ID %s not found", user.ID().String()).
+			WithDetails("user_id", user.ID().String())
 	}
 
 	r.storage[user.ID()] = user

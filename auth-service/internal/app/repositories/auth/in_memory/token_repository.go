@@ -2,12 +2,12 @@ package in_memory
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 )
 
 var _ ports.TokenRepository = (*TokenRepository)(nil)
@@ -19,7 +19,6 @@ type TokenRepository struct {
 }
 
 func NewTokenRepository(logger *slog.Logger) *TokenRepository {
-	// Если логгер не передан, создаем дефолтный noop логгер
 	if logger == nil {
 		logger = slog.New(slog.NewTextHandler(nil, nil))
 	}
@@ -39,7 +38,9 @@ func (t *TokenRepository) Create(ctx context.Context, auth *models.AuthToken) (*
 	token, ok := t.tokens[auth.Token()]
 	if ok {
 		t.logger.Warn("token already exists", "token", auth.Token())
-		return nil, errors.New("token already exists")
+		return nil, errors.NewAlreadyExistsError("token already exists").
+			WithDetails("token", auth.Token()).
+			WithDetails("user_id", auth.UserID().String())
 	}
 
 	token, err := models.NewAuthToken(auth.Token(), auth.UserID(), auth.ExpiresAt())
@@ -63,7 +64,8 @@ func (t *TokenRepository) FindToken(ctx context.Context, token string) (models.T
 	authToken, ok := t.tokens[models.Token(token)]
 	if !ok {
 		t.logger.Debug("token not found", "token", token)
-		return "", errors.New("token not found")
+		return "", errors.NewNotFoundError("token not found").
+			WithDetails("token", token)
 	}
 
 	t.logger.Debug("token found", "token", token, "user_id", authToken.UserID())
@@ -79,12 +81,15 @@ func (t *TokenRepository) ValidateToken(ctx context.Context, token string) (bool
 	authToken, ok := t.tokens[models.Token(token)]
 	if !ok {
 		t.logger.Debug("token not found during validation", "token", token)
-		return false, errors.New("token not found")
+		return false, errors.NewNotFoundError("token not found").
+			WithDetails("token", token)
 	}
 
 	if authToken.IsExpired() {
 		t.logger.Debug("token is expired", "token", token, "expires_at", authToken.ExpiresAt())
-		return false, errors.New("token is expired")
+		return false, errors.NewTokenError(errors.ErrTokenExpired, "token is expired").
+			WithDetails("token", token).
+			WithDetails("expires_at", authToken.ExpiresAt())
 	}
 
 	t.logger.Debug("token is valid", "token", token, "user_id", authToken.UserID())
@@ -100,7 +105,8 @@ func (t *TokenRepository) DeleteToken(ctx context.Context, token models.Token) e
 	_, ok := t.tokens[token]
 	if !ok {
 		t.logger.Debug("token not found for deletion", "token", token)
-		return errors.New("token not found")
+		return errors.NewNotFoundError("token not found").
+			WithDetails("token", token)
 	}
 
 	delete(t.tokens, token)

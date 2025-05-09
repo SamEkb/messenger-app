@@ -1,8 +1,9 @@
 package models
 
 import (
-	"errors"
 	"time"
+
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 )
 
 type Token string
@@ -15,15 +16,18 @@ type AuthToken struct {
 
 func NewAuthToken(token Token, userID UserID, expiresAt time.Time) (*AuthToken, error) {
 	if token.IsEmpty() {
-		return nil, errors.New("token cannot be empty")
+		return nil, errors.NewInvalidInputError("token cannot be empty").
+			WithDetails("field", "token")
 	}
 
 	if expiresAt.IsZero() {
-		return nil, errors.New("expiresAt cannot be zero")
+		return nil, errors.NewInvalidInputError("expiresAt cannot be zero").
+			WithDetails("field", "expiresAt")
 	}
 
 	if userID.IsEmpty() {
-		return nil, errors.New("userID cannot be empty")
+		return nil, errors.NewInvalidInputError("userID cannot be empty").
+			WithDetails("field", "userID")
 	}
 
 	return &AuthToken{

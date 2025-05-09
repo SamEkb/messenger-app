@@ -1,8 +1,7 @@
 package models
 
 import (
-	"errors"
-
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/google/uuid"
 )
 
@@ -17,16 +16,18 @@ type User struct {
 
 func NewUser(id UserID, username string, email string, password []byte) (*User, error) {
 	if id.IsEmpty() {
-		return nil, errors.New("id cannot be empty")
+		return nil, errors.NewInvalidInputError("id cannot be empty")
 	}
 	if username == "" {
-		return nil, errors.New("username cannot be empty")
+		return nil, errors.NewInvalidInputError("username cannot be empty")
 	}
 	if email == "" {
-		return nil, errors.New("email cannot be empty")
+		return nil, errors.NewInvalidInputError("email cannot be empty").
+			WithDetails("field", "email")
 	}
 	if len(password) == 0 {
-		return nil, errors.New("password cannot be empty")
+		return nil, errors.NewInvalidInputError("password cannot be empty").
+			WithDetails("field", "password")
 	}
 	return &User{
 		id:       id,

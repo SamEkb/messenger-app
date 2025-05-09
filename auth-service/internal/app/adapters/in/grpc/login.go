@@ -5,13 +5,15 @@ import (
 	"time"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
 )
 
 func (s *Server) Login(ctx context.Context, req *auth.LoginRequest) (*auth.LoginResponse, error) {
 	if err := s.validator.Validate(req); err != nil {
 		s.logger.Error("validation error", "error", err)
-		return nil, err
+		return nil, errors.NewValidationError("invalid request: %v", err).
+			WithDetails("email", req.GetEmail())
 	}
 
 	s.logger.Info("login request received", "email", req.GetEmail())
