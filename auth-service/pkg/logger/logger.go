@@ -15,7 +15,7 @@ func NewLogger(env string, serviceName string) *slog.Logger {
 	var logger *slog.Logger
 
 	opts := &slog.HandlerOptions{
-		AddSource: true,
+		//	AddSource: true,
 	}
 
 	switch env {

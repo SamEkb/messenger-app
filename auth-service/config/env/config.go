@@ -55,6 +55,9 @@ func LoadConfig() (*Config, error) {
 	c := &Config{
 		AppName: getEnv("APP_NAME", "AuthService"),
 		Debug:   getEnv("DEBUG", "dev"),
+		Server:  &ServerConfig{},
+		Kafka:   &KafkaConfig{},
+		Auth:    &AuthConfig{},
 	}
 
 	c.Server.GRPCHost = getEnv("GRPC_HOST", "0.0.0.0")
