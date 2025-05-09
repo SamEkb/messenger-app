@@ -17,25 +17,20 @@ var (
 
 	ErrValidation = errors.New("validation error")
 
-	ErrInternal = errors.New("internal error")
-	ErrTimeout  = errors.New("operation timeout")
+	ErrTimeout = errors.New("operation timeout")
 
 	ErrTokenExpired = errors.New("token expired")
 	ErrInvalidToken = errors.New("invalid token")
-
-	ErrServiceUnavailable = errors.New("service unavailable")
 )
 
 const (
 	CodeNotFound      = "NOT_FOUND"
 	CodeAlreadyExists = "ALREADY_EXISTS"
 	CodeUnauthorized  = "UNAUTHORIZED"
-	CodeForbidden     = "FORBIDDEN"
 	CodeInvalidInput  = "INVALID_INPUT"
 	CodeValidation    = "VALIDATION"
 	CodeInternal      = "INTERNAL"
 	CodeTimeout       = "TIMEOUT"
-	CodeDatabase      = "DATABASE"
 	CodeToken         = "TOKEN"
 	CodeService       = "SERVICE"
 )
@@ -74,21 +69,6 @@ func Is(err, target error) bool {
 	return errors.Is(err, target)
 }
 
-func As(err error, target interface{}) bool {
-	return errors.As(err, &target)
-}
-
-func Wrap(err error, message string) error {
-	if err == nil {
-		return nil
-	}
-	return fmt.Errorf("%s: %w", message, err)
-}
-
-func New(message string) error {
-	return errors.New(message)
-}
-
 func NewNotFoundError(format string, args ...interface{}) *AppError {
 	return &AppError{
 		Err:     ErrNotFound,
@@ -110,14 +90,6 @@ func NewUnauthorizedError(format string, args ...interface{}) *AppError {
 		Err:     ErrUnauthorized,
 		Message: fmt.Sprintf(format, args...),
 		Code:    CodeUnauthorized,
-	}
-}
-
-func NewForbiddenError(format string, args ...interface{}) *AppError {
-	return &AppError{
-		Err:     ErrForbidden,
-		Message: fmt.Sprintf(format, args...),
-		Code:    CodeForbidden,
 	}
 }
 
@@ -145,14 +117,6 @@ func NewInternalError(err error, format string, args ...interface{}) *AppError {
 	}
 }
 
-func NewDatabaseError(err error, format string, args ...interface{}) *AppError {
-	return &AppError{
-		Err:     err,
-		Message: fmt.Sprintf(format, args...),
-		Code:    CodeDatabase,
-	}
-}
-
 func NewTimeoutError(format string, args ...interface{}) *AppError {
 	return &AppError{
 		Err:     ErrTimeout,
@@ -175,20 +139,4 @@ func NewServiceError(err error, format string, args ...interface{}) *AppError {
 		Message: fmt.Sprintf(format, args...),
 		Code:    CodeService,
 	}
-}
-
-func GetErrorCode(err error) string {
-	var appErr *AppError
-	if errors.As(err, &appErr) {
-		return appErr.Code
-	}
-	return "UNKNOWN"
-}
-
-func GetErrorDetails(err error) map[string]interface{} {
-	var appErr *AppError
-	if errors.As(err, &appErr) && appErr.Details != nil {
-		return appErr.Details
-	}
-	return nil
 }

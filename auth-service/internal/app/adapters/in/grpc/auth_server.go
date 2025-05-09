@@ -12,6 +12,7 @@ import (
 	"buf.build/go/protovalidate"
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc" // Импорт для интерцептора ошибок
 	apperrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
@@ -61,6 +62,7 @@ func (s *Server) RunServers(ctx context.Context) error {
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),
 		)
 		auth.RegisterAuthServiceServer(grpcServer, s)
