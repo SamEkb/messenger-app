@@ -47,6 +47,14 @@ type AuthConfig struct {
 	TokenTTL time.Duration
 }
 
+func (s *ServerConfig) GrpcAddr() string {
+	return s.GRPCHost + ":" + strconv.Itoa(s.GRPCPort)
+}
+
+func (s *ServerConfig) HttpAddr() string {
+	return s.HTTPHost + ":" + strconv.Itoa(s.HTTPPort)
+}
+
 func LoadConfig() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Info: .env file not found or couldn't be loaded; using environment variables")

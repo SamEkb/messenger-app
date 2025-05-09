@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -67,7 +66,7 @@ func (s *Server) RunServers(ctx context.Context) error {
 		auth.RegisterAuthServiceServer(grpcServer, s)
 		reflection.Register(grpcServer)
 
-		addr := ":" + strconv.Itoa(s.cfg.GRPCPort)
+		addr := s.cfg.GrpcAddr()
 		lis, err := net.Listen("tcp", addr)
 		if err != nil {
 			s.logger.Error("gRPC listen error", "error", err)
@@ -107,7 +106,7 @@ func (s *Server) RunServers(ctx context.Context) error {
 		root.HandleFunc("/live", liveHandler)
 		root.HandleFunc("/ready", readyHandler)
 
-		addr := ":" + strconv.Itoa(s.cfg.HTTPPort)
+		addr := s.cfg.HttpAddr()
 		httpServer := &http.Server{
 			Addr:    addr,
 			Handler: root,
