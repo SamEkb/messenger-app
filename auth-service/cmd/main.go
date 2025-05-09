@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
+	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/in/grpc"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/out/kafka"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/in_memory"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
@@ -40,5 +41,14 @@ func main() {
 		log,
 	)
 
-	_ := usecase
+	server, err := grpc.NewServer(config.Server, usecase, log)
+	if err != nil {
+		log.Error("failed to create grpc server", "error", err)
+		panic(err)
+	}
+
+	if err = server.RunServers(ctx); err != nil {
+		log.Error("failed to run grpc server", "error", err)
+		panic(err)
+	}
 }

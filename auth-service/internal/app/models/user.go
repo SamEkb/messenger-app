@@ -40,6 +40,10 @@ func (u UserID) IsEmpty() bool {
 	return u == UserID(uuid.Nil)
 }
 
+func (u UserID) String() string {
+	return uuid.UUID(u).String()
+}
+
 func (u *User) ID() UserID {
 	return u.id
 }

@@ -14,34 +14,32 @@ import (
 func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.UserID, error) {
 	a.logger.Debug("register attempt", "username", dto.Username, "email", dto.Email)
 
-	// Хешируем пароль
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
 		a.logger.Error("failed to hash password", "error", err)
-		return "", err
+		return models.UserID{}, err
 	}
 
-	// Создаем пользователя
+	userID := models.UserID(uuid.New())
+
 	user, err := models.NewUser(
-		models.UserID(uuid.New().String()),
+		userID,
 		dto.Username,
 		dto.Email,
-		string(hashedPassword),
+		hashedPassword,
 	)
 	if err != nil {
 		a.logger.Error("failed to create user model", "error", err)
-		return "", err
+		return models.UserID{}, err
 	}
 
-	// Сохраняем пользователя
 	if err = a.authRepo.Create(ctx, user); err != nil {
 		a.logger.Error("failed to save user", "error", err)
-		return "", err
+		return models.UserID{}, err
 	}
 
-	// Публикуем событие о регистрации пользователя
 	event := &events.UserRegisteredEvent{
-		UserId:       string(user.ID()),
+		UserId:       user.ID().String(),
 		Username:     user.Username(),
 		Email:        user.Email(),
 		RegisteredAt: timestamppb.Now(),
@@ -49,7 +47,6 @@ func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.
 
 	if err = a.userEventPublisher.ProduceUserRegisteredEvent(ctx, event); err != nil {
 		a.logger.Warn("failed to publish user registration event", "error", err, "user_id", user.ID())
-		// Не возвращаем ошибку, так как регистрация завершилась успешно
 	}
 
 	a.logger.Info("user registered successfully", "user_id", user.ID(), "username", user.Username(), "email", user.Email())
