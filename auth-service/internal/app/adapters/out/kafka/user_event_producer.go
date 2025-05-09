@@ -3,11 +3,11 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
 	"github.com/Shopify/sarama"
 )
@@ -22,14 +22,14 @@ type UserEventsKafkaProducer struct {
 
 func NewUserEventsKafkaProducer(kafkaCfg *env.KafkaConfig, logger *slog.Logger) (*UserEventsKafkaProducer, error) {
 	if kafkaCfg == nil {
-		panic("kafka config is nil")
+		return nil, errors.NewInvalidInputError("kafka config is nil")
 	}
 
 	cfg := NewSaramaConfig(kafkaCfg, logger)
 
 	producer, err := sarama.NewSyncProducer(kafkaCfg.Brokers, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
+		return nil, errors.NewServiceError(err, "failed to create Kafka producer")
 	}
 
 	return &UserEventsKafkaProducer{
@@ -45,7 +45,7 @@ func (p *UserEventsKafkaProducer) ProduceUserRegisteredEvent(ctx context.Context
 	data, err := json.Marshal(event)
 	if err != nil {
 		p.logger.Error("failed to marshal event", "error", err)
-		return fmt.Errorf("failed to marshal event: %w", err)
+		return errors.NewInternalError(err, "failed to marshal event")
 	}
 
 	msg := &sarama.ProducerMessage{
@@ -67,11 +67,13 @@ func (p *UserEventsKafkaProducer) ProduceUserRegisteredEvent(ctx context.Context
 	select {
 	case <-ctx.Done():
 		p.logger.Warn("message sending aborted", "error", ctx.Err())
-		return fmt.Errorf("message sending aborted: %w", ctx.Err())
+		return errors.NewTimeoutError("message sending aborted: %v", ctx.Err()).
+			WithDetails("user_id", event.GetUserId())
 	case <-doneCh:
 		if sendErr != nil {
 			p.logger.Error("failed to send message", "error", sendErr)
-			return fmt.Errorf("failed to send message: %w", sendErr)
+			return errors.NewServiceError(sendErr, "failed to send message").
+				WithDetails("user_id", event.GetUserId())
 		}
 		p.logger.Info("published UserRegisteredEvent",
 			"user_id", event.GetUserId(),
@@ -84,5 +86,9 @@ func (p *UserEventsKafkaProducer) ProduceUserRegisteredEvent(ctx context.Context
 
 func (p *UserEventsKafkaProducer) Close() error {
 	p.logger.Info("closing kafka producer")
-	return p.producer.Close()
+	err := p.producer.Close()
+	if err != nil {
+		return errors.NewServiceError(err, "failed to close Kafka producer")
+	}
+	return nil
 }

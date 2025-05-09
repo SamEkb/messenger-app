@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 )
 
 func (a *UseCase) Logout(ctx context.Context, token models.Token) error {
@@ -17,7 +18,8 @@ func (a *UseCase) Logout(ctx context.Context, token models.Token) error {
 
 	if !valid {
 		a.logger.Warn("invalid token", "token", token)
-		return err
+		return errors.NewTokenError(errors.ErrInvalidToken, "token is invalid").
+			WithDetails("token", token)
 	}
 
 	err = a.tokenRepo.DeleteToken(ctx, token)

@@ -2,7 +2,6 @@ package middleware_grpc
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"google.golang.org/grpc"
@@ -10,7 +9,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ErrorsUnaryServerInterceptor преобразует ошибки приложения в gRPC ошибки
 func ErrorsUnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -20,21 +18,17 @@ func ErrorsUnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	) (resp any, err error) {
 		resp, err = handler(ctx, req)
 		if err != nil {
-			// Если это уже gRPC статус, возвращаем как есть
 			if _, ok := status.FromError(err); ok {
 				return resp, err
 			}
 
-			// Преобразуем ошибки приложения в gRPC ошибки
 			var code codes.Code
 			switch {
 			case errors.Is(err, errors.ErrNotFound):
 				code = codes.NotFound
 			case errors.Is(err, errors.ErrAlreadyExists):
 				code = codes.AlreadyExists
-			case errors.Is(err, errors.ErrUnauthorized),
-				errors.Is(err, errors.ErrTokenExpired),
-				errors.Is(err, errors.ErrInvalidToken):
+			case errors.Is(err, errors.ErrUnauthorized):
 				code = codes.Unauthenticated
 			case errors.Is(err, errors.ErrForbidden):
 				code = codes.PermissionDenied
@@ -42,30 +36,15 @@ func ErrorsUnaryServerInterceptor() grpc.UnaryServerInterceptor {
 				errors.Is(err, errors.ErrValidation):
 				code = codes.InvalidArgument
 			case errors.Is(err, errors.ErrDatabaseConnection),
-				errors.Is(err, errors.ErrDatabaseQuery),
-				errors.Is(err, errors.ErrServiceUnavailable):
+				errors.Is(err, errors.ErrDatabaseQuery):
 				code = codes.Unavailable
+			case errors.Is(err, errors.ErrTimeout):
+				code = codes.DeadlineExceeded
 			default:
 				code = codes.Internal
 			}
 
-			// Получаем детали ошибки для более информативного сообщения
-			details := errors.GetErrorDetails(err)
-			statusErr := status.Error(code, err.Error())
-
-			// Если есть детали, добавляем их в статус
-			if details != nil && len(details) > 0 {
-				// Для простоты, просто добавляем строковое представление деталей в статусе
-				detailsStr := ""
-				for k, v := range details {
-					detailsStr += fmt.Sprintf("%s: %v; ", k, v)
-				}
-				if detailsStr != "" {
-					return nil, status.Errorf(code, "%s [Details: %s]", err.Error(), detailsStr)
-				}
-			}
-
-			return nil, statusErr
+			return nil, status.Error(code, err.Error())
 		}
 
 		return resp, nil

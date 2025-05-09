@@ -5,6 +5,7 @@ import (
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -17,7 +18,7 @@ func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
 		a.logger.Error("failed to hash password", "error", err)
-		return models.UserID{}, err
+		return models.UserID{}, errors.NewInternalError(err, "failed to hash password")
 	}
 
 	userID := models.UserID(uuid.New())

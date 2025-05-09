@@ -4,13 +4,16 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
 )
 
 func (s *Server) Register(ctx context.Context, req *auth.RegisterRequest) (*auth.RegisterResponse, error) {
 	if err := s.validator.Validate(req); err != nil {
 		s.logger.Error("validation error", "error", err)
-		return nil, err
+		return nil, errors.NewValidationError("invalid request: %v", err).
+			WithDetails("username", req.GetUsername()).
+			WithDetails("email", req.GetEmail())
 	}
 
 	s.logger.Info("register request received",

@@ -17,6 +17,9 @@ var (
 
 	ErrValidation = errors.New("validation error")
 
+	ErrInternal = errors.New("internal error")
+	ErrTimeout  = errors.New("operation timeout")
+
 	ErrTokenExpired = errors.New("token expired")
 	ErrInvalidToken = errors.New("invalid token")
 
@@ -31,6 +34,7 @@ const (
 	CodeInvalidInput  = "INVALID_INPUT"
 	CodeValidation    = "VALIDATION"
 	CodeInternal      = "INTERNAL"
+	CodeTimeout       = "TIMEOUT"
 	CodeDatabase      = "DATABASE"
 	CodeToken         = "TOKEN"
 	CodeService       = "SERVICE"
@@ -146,6 +150,14 @@ func NewDatabaseError(err error, format string, args ...interface{}) *AppError {
 		Err:     err,
 		Message: fmt.Sprintf(format, args...),
 		Code:    CodeDatabase,
+	}
+}
+
+func NewTimeoutError(format string, args ...interface{}) *AppError {
+	return &AppError{
+		Err:     ErrTimeout,
+		Message: fmt.Sprintf(format, args...),
+		Code:    CodeTimeout,
 	}
 }
 
