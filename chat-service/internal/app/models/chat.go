@@ -65,12 +65,28 @@ func (u MessageID) String() string {
 	return uuid.UUID(u).String()
 }
 
+func ParseMessageID(id string) (MessageID, error) {
+	parsedUUID, err := uuid.Parse(id)
+	if err != nil {
+		return MessageID(uuid.Nil), err
+	}
+	return MessageID(parsedUUID), nil
+}
+
 func (u ChatID) IsEmpty() bool {
 	return u == ChatID(uuid.Nil)
 }
 
 func (u ChatID) String() string {
 	return uuid.UUID(u).String()
+}
+
+func ParseChatID(id string) (ChatID, error) {
+	parsedUUID, err := uuid.Parse(id)
+	if err != nil {
+		return ChatID(uuid.Nil), err
+	}
+	return ChatID(parsedUUID), nil
 }
 
 func (m *Message) ID() MessageID {

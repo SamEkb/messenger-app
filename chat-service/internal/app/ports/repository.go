@@ -7,8 +7,8 @@ import (
 )
 
 type ChatRepository interface {
-	Create(ctx context.Context, chat *models.Chat) error
-	Get(ctx context.Context, id models.ChatID) (*models.Chat, error)
-	GetByUserID(ctx context.Context, userID string) []*models.Chat
-	Update(ctx context.Context, chat *models.Chat) error
+	Create(ctx context.Context, participants []string) (*models.Chat, error)
+	Get(ctx context.Context, userID string) ([]*models.Chat, error)
+	SendMessage(ctx context.Context, chatID models.ChatID, authorID, content string) error
+	GetMessages(ctx context.Context, chatID models.ChatID) ([]*models.Message, error)
 }

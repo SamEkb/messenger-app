@@ -206,7 +206,7 @@ func (s *ChatServiceServer) CreateChat(ctx context.Context, req *chat.CreateChat
 		return nil, status.Error(codes.InvalidArgument, "chat must have at least 2 participants")
 	}
 
-	log.Printf("CreateChat request with participants: %v", participants)
+	log.Printf("Create request with participants: %v", participants)
 
 	for _, userID := range participants {
 		_, err := s.usersClient.GetUserProfile(ctx, userID)
@@ -247,7 +247,7 @@ func (s *ChatServiceServer) GetUserChats(ctx context.Context, req *chat.GetUserC
 	}
 
 	userID := req.GetUserId()
-	log.Printf("GetUserChats request for user %s", userID)
+	log.Printf("Get request for user %s", userID)
 
 	_, err := s.usersClient.GetUserProfile(ctx, userID)
 	if err != nil {
@@ -320,7 +320,7 @@ func (s *ChatServiceServer) GetChatHistory(ctx context.Context, req *chat.GetCha
 	limit := req.GetLimit()
 	offset := req.GetOffset()
 
-	log.Printf("GetChatHistory request for chat %s (limit: %d, offset: %d)", chatID, limit, offset)
+	log.Printf("GetMessages request for chat %s (limit: %d, offset: %d)", chatID, limit, offset)
 
 	// Verify chat exists
 	_, exists := s.storage.GetChat(chatID)

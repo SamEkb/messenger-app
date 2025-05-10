@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+var _ ports.UserGrpcServer = (*Server)(nil)
+
 type Server struct {
 	auth.UnimplementedAuthServiceServer
 	validator   protovalidate.Validator

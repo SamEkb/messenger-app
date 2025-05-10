@@ -127,3 +127,26 @@ message CheckFriendshipStatusResponse {
   // When the friendship status was last updated
   google.protobuf.Timestamp updated_at = 3;
 }
+
+// CheckFriendshipsStatusRequest represents a request to check friendships status.
+message CheckFriendshipsStatusRequest {
+  // Users ids
+  repeated string user_ids = 1;
+}
+
+// CheckFriendshipsStatusResponse represents a response to check friendships status.
+message CheckFriendshipsStatusResponse {
+  // Users pair
+  message UserPair {
+    // user 1 id
+    string user_id1 = 1;
+    // user 2 id
+    string user_id2 = 2;
+  }
+
+  // Non friends pairs
+  repeated UserPair non_friend_pairs = 1;
+
+  // If all friends true
+  bool all_are_friends = 2;
+}
