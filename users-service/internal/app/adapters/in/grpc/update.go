@@ -11,11 +11,11 @@ func (s *UsersServiceServer) UpdateUserProfile(ctx context.Context, req *users.U
 	s.logger.Info("Updating user profile")
 
 	dto := &ports.UserDto{
-		ID:          req.UserId,
-		Email:       req.Email,
-		Nickname:    req.Nickname,
-		Description: req.Description,
-		AvatarURL:   req.AvatarUrl,
+		ID:          req.Profile.UserId,
+		Email:       req.Profile.Email,
+		Nickname:    req.Profile.Nickname,
+		Description: req.Profile.Description,
+		AvatarURL:   req.Profile.AvatarUrl,
 	}
 	if err := s.userUseCase.Update(ctx, dto); err != nil {
 		s.logger.Error("Failed to update user profile", "error", err)
