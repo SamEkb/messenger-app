@@ -2,12 +2,13 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
 	"google.golang.org/grpc"
+	grpcStatus "google.golang.org/grpc/status"
 )
 
 type FriendsServiceClientAdapter struct {
@@ -17,7 +18,9 @@ type FriendsServiceClientAdapter struct {
 
 func (c *FriendsServiceClientAdapter) Close() error {
 	if c.conn != nil {
-		return c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			return errors.NewServiceError(err, "failed to close connection to Friends Service")
+		}
 	}
 	return nil
 }
@@ -33,8 +36,11 @@ func (c *FriendsServiceClientAdapter) CheckFriendsStatus(userID1, userID2 string
 
 	resp, err := c.client.CheckFriendshipStatus(ctx, req)
 	if err != nil {
-		return friends.FriendshipStatus_FRIENDSHIP_STATUS_UNSPECIFIED,
-			fmt.Errorf("failed to check friendship status: %w", err)
+		st, ok := grpcStatus.FromError(err)
+		if ok {
+			return resp.Status, errors.NewServiceError(err, "failed to check friendship status: %s", st.Message())
+		}
+		return resp.Status, errors.NewServiceError(err, "failed to check friendship status")
 	}
 
 	return resp.Status, nil
@@ -43,7 +49,11 @@ func (c *FriendsServiceClientAdapter) CheckFriendsStatus(userID1, userID2 string
 func (c *FriendsServiceClientAdapter) CheckFriendshipsStatus(ctx context.Context, request *friends.CheckFriendshipsStatusRequest) (*ports.CheckFriendshipsStatusResponse, error) {
 	resp, err := c.client.CheckFriendshipsStatus(ctx, request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check friendships status: %w", err)
+		st, ok := grpcStatus.FromError(err)
+		if ok {
+			return nil, errors.NewServiceError(err, "failed to check friendships status: %s", st.Message())
+		}
+		return nil, errors.NewServiceError(err, "failed to check friendships status")
 	}
 
 	userPairs := make([]ports.UserPair, 0, len(resp.NonFriendPairs))

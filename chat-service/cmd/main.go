@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
+	grpcserver "github.com/SamEkb/messenger-app/chat-service/internal/app/adapters/in/grpc"
+	grpcclient "github.com/SamEkb/messenger-app/chat-service/internal/app/adapters/out/grpc"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/repositories/in_memory"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/usecases/chat"
 	"github.com/SamEkb/messenger-app/chat-service/pkg/logger"
@@ -23,5 +25,29 @@ func main() {
 
 	chatRepository := in_memory.NewChatRepository(log)
 
-	chatUseCase := chat.NewChatUseCase()
+	client := grpcclient.NewClient(config.Clients, log)
+
+	usersClient, err := client.NewUsersServiceClient(ctx)
+	if err != nil {
+		log.Error("failed to create Users Service client", "error", err)
+		panic(err)
+	}
+	friendsClient, err := client.NewFriendsServiceClient(ctx)
+	if err != nil {
+		log.Error("failed to create Friends Service client", "error", err)
+		panic(err)
+	}
+
+	chatUseCase := chat.NewChatUseCase(chatRepository, usersClient, friendsClient, log)
+
+	server, err := grpcserver.NewChatServer(chatUseCase, config.Server, log)
+	if err != nil {
+		log.Error("failed to create grpc server", "error", err)
+		panic(err)
+	}
+
+	if err = server.RunServers(ctx); err != nil {
+		log.Error("failed to run grpc server", "error", err)
+		panic(err)
+	}
 }

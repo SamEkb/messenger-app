@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -31,18 +30,11 @@ type ServerConfig struct {
 type ClientsConfig struct {
 	Users   *ServiceClientConfig
 	Friends *ServiceClientConfig
-	GRPC    *GRPCClientConfig
 }
 
 type ServiceClientConfig struct {
 	Host string
 	Port int
-}
-
-type GRPCClientConfig struct {
-	ConnectionTimeout time.Duration
-	RetryAttempts     int
-	RetryDelay        time.Duration
 }
 
 func (s *ServerConfig) GrpcAddr() string {
@@ -69,7 +61,6 @@ func LoadConfig() (*Config, error) {
 		Clients: &ClientsConfig{
 			Users:   &ServiceClientConfig{},
 			Friends: &ServiceClientConfig{},
-			GRPC:    &GRPCClientConfig{},
 		},
 	}
 
@@ -83,10 +74,6 @@ func LoadConfig() (*Config, error) {
 
 	c.Clients.Friends.Host = getEnv("FRIENDS_SERVICE_HOST", "localhost")
 	c.Clients.Friends.Port = getEnvAsInt("FRIENDS_SERVICE_PORT", 9003)
-
-	c.Clients.GRPC.ConnectionTimeout = time.Duration(getEnvAsInt("GRPC_CONNECTION_TIMEOUT_SEC", 5)) * time.Second
-	c.Clients.GRPC.RetryAttempts = getEnvAsInt("GRPC_RETRY_ATTEMPTS", 3)
-	c.Clients.GRPC.RetryDelay = time.Duration(getEnvAsInt("GRPC_RETRY_DELAY_SEC", 1)) * time.Second
 
 	return c, nil
 }

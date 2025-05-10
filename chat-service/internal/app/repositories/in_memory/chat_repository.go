@@ -66,7 +66,7 @@ func (r *ChatRepository) Get(ctx context.Context, userID string) ([]*models.Chat
 	return result, nil
 }
 
-func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, authorID, content string) error {
+func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, authorID, content string) (*models.Message, error) {
 	r.logger.Info("sending message", "chatID", chatID, "authorID", authorID, "content", content)
 
 	r.mx.Lock()
@@ -75,19 +75,22 @@ func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, 
 	chat, ok := r.storage[chatID]
 	if !ok {
 		r.logger.Error("chat not found", "chatID", chatID)
-		return errors.NewNotFoundError("chat not found", "chatID", chatID)
+		return nil, errors.NewNotFoundError("chat not found", "chatID", chatID)
 	}
 	msg, err := models.NewMessage(authorID, content)
 	if err != nil {
 		r.logger.Error("failed to create message", "error", err)
-		return err
+		return nil, err
 	}
 
 	r.messages[chatID] = append(r.messages[chatID], msg)
-	_ = chat.AddMessage(msg)
+	if err = chat.AddMessage(msg); err != nil {
+		r.logger.Error("failed to add message to chat", "error", err)
+		return nil, err
+	}
 
 	r.logger.Info("message sent", "chatID", chatID, "authorID", authorID, "content", content)
-	return nil
+	return msg, nil
 }
 
 func (r *ChatRepository) GetMessages(ctx context.Context, chatID models.ChatID) ([]*models.Message, error) {

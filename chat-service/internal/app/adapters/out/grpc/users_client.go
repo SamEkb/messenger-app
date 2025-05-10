@@ -2,12 +2,13 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"google.golang.org/grpc"
+	grpcStatus "google.golang.org/grpc/status"
 )
 
 type UsersServiceClientAdapter struct {
@@ -17,7 +18,9 @@ type UsersServiceClientAdapter struct {
 
 func (c *UsersServiceClientAdapter) Close() error {
 	if c.conn != nil {
-		return c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			return errors.NewServiceError(err, "failed to close connection to Users Service")
+		}
 	}
 	return nil
 }
@@ -32,7 +35,11 @@ func (c *UsersServiceClientAdapter) GetUserProfile(userID string) (*ports.UserPr
 
 	resp, err := c.client.GetUserProfile(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user profile: %w", err)
+		st, ok := grpcStatus.FromError(err)
+		if ok {
+			return nil, errors.NewServiceError(err, "failed to get user profile: %s", st.Message())
+		}
+		return nil, errors.NewServiceError(err, "failed to get user profile")
 	}
 
 	return &ports.UserProfile{
@@ -47,7 +54,11 @@ func (c *UsersServiceClientAdapter) GetUserProfile(userID string) (*ports.UserPr
 func (c *UsersServiceClientAdapter) GetProfiles(ctx context.Context, request *users.GetProfilesRequest) (*ports.GetProfilesResponse, error) {
 	resp, err := c.client.GetProfiles(ctx, request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user profiles: %w", err)
+		st, ok := grpcStatus.FromError(err)
+		if ok {
+			return nil, errors.NewServiceError(err, "failed to get user profiles: %s", st.Message())
+		}
+		return nil, errors.NewServiceError(err, "failed to get user profiles")
 	}
 
 	profiles := make(map[string]*ports.UserProfile)

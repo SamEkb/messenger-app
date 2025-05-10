@@ -148,10 +148,7 @@ func (s *ChatStorage) GetMessages(chatID string, limit, offset int32) ([]*chat.M
 
 type ChatServiceServer struct {
 	chat.UnimplementedChatServiceServer
-	validator     protovalidate.Validator
-	storage       *ChatStorage
-	usersClient   *clients.UsersClient
-	friendsClient *clients.FriendsClient
+	validator protovalidate.Validator
 }
 
 func NewServer() (*ChatServiceServer, error) {
