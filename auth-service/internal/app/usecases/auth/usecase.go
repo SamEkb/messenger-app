@@ -22,7 +22,6 @@ func NewAuthUseCase(
 	tokenTTL time.Duration,
 	logger *slog.Logger,
 ) *UseCase {
-	// Если логгер не передан, создаем дефолтный noop логгер
 	if logger == nil {
 		logger = slog.New(slog.NewTextHandler(nil, nil))
 	}

@@ -16,12 +16,10 @@ const (
 	userEventsTopic = "user-events"
 )
 
-// EventHandler defines handlers for Kafka events
 type EventHandler interface {
 	HandleUserRegistered(ctx context.Context, event *events.UserRegisteredEvent) error
 }
 
-// Consumer handles Kafka message consumption
 type Consumer struct {
 	consumer  sarama.Consumer
 	handler   EventHandler
@@ -30,7 +28,6 @@ type Consumer struct {
 	canceller func()
 }
 
-// NewConsumer creates a new Kafka consumer
 func NewConsumer(handler EventHandler) (*Consumer, error) {
 	brokers := getBrokers()
 	if len(brokers) == 0 {
@@ -54,7 +51,6 @@ func NewConsumer(handler EventHandler) (*Consumer, error) {
 	}, nil
 }
 
-// Start starts consuming messages from Kafka
 func (c *Consumer) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	c.canceller = cancel
@@ -94,7 +90,6 @@ func (c *Consumer) Start(ctx context.Context) error {
 	return nil
 }
 
-// Close closes the consumer connection
 func (c *Consumer) Close() error {
 	if c.canceller != nil {
 		c.canceller()
@@ -105,12 +100,10 @@ func (c *Consumer) Close() error {
 	return nil
 }
 
-// Ready returns a channel that will be closed when the consumer is ready
 func (c *Consumer) Ready() <-chan bool {
 	return c.ready
 }
 
-// handleMessage processes incoming Kafka messages
 func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
 	log.Printf("Received message from topic %s, partition %d, offset %d",
 		msg.Topic, msg.Partition, msg.Offset)
@@ -127,7 +120,6 @@ func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessag
 	return fmt.Errorf("unknown topic: %s", msg.Topic)
 }
 
-// getBrokers gets the Kafka brokers from environment
 func getBrokers() []string {
 	brokers := os.Getenv("KAFKA_BROKERS")
 	if brokers == "" {
