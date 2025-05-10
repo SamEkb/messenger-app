@@ -6,7 +6,7 @@ import (
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 )
 
-var _ ports.UserUseCase = (UseCase)(nil)
+var _ ports.UserUseCase = (*UseCase)(nil)
 
 type UseCase struct {
 	userRepository ports.UserRepository

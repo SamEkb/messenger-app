@@ -24,18 +24,29 @@ func main() {
 	log.Info("starting users service")
 
 	usersRepo := in_memory.NewUserRepository(log)
-
 	userUseCase := user.NewUseCase(usersRepo, log)
 
-	server := kafka.NewUsersServiceServer(userUseCase, log)
+	kafkaServer := kafka.NewUsersServiceServer(userUseCase, log)
 
-	newServer, err := grpc.NewServer(config.Server, userUseCase, log)
+	consumer, err := kafka.NewConsumer(kafkaServer)
+	if err != nil {
+		log.Error("failed to create Kafka consumer", "error", err)
+		panic(err)
+	}
+
+	if err := consumer.Start(ctx); err != nil {
+		log.Error("failed to start Kafka consumer", "error", err)
+		panic(err)
+	}
+	defer consumer.Close()
+
+	grpcServer, err := grpc.NewServer(config.Server, userUseCase, log)
 	if err != nil {
 		log.Error("failed to create grpc server", "error", err)
 		panic(err)
 	}
 
-	if err = newServer.RunServers(ctx); err != nil {
+	if err = grpcServer.RunServers(ctx); err != nil {
 		log.Error("failed to run grpc server", "error", err)
 		panic(err)
 	}
