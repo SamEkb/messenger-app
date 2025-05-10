@@ -37,7 +37,7 @@ func (u *UseCase) CreateChat(ctx context.Context, participants []string) (*ports
 	})
 	if err != nil {
 		u.logger.Error("failed to check friendships status", "error", err)
-		return nil, fmt.Errorf("failed to validate friendships: %w", err)
+		return nil, err
 	}
 
 	if !friendshipResp.AllAreFriends {
@@ -58,7 +58,7 @@ func (u *UseCase) CreateChat(ctx context.Context, participants []string) (*ports
 	return ports.NewChatDto(
 		chat.ID().String(),
 		chat.Participants(),
-		make([]ports.MessageDto, 0),
+		make([]*ports.MessageDto, 0),
 		chat.CreatedAt(),
 		chat.UpdatedAt(),
 	), nil

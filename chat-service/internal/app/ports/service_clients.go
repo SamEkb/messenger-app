@@ -18,7 +18,7 @@ type GetProfilesResponse struct {
 }
 
 type FriendServiceClient interface {
-	CheckFriendsStatus(userID1, userID2 string) (bool, error)
+	CheckFriendsStatus(userID1, userID2 string) (friends.FriendshipStatus, error)
 	CheckFriendshipsStatus(ctx context.Context, userIDs *friends.CheckFriendshipsStatusRequest) (*CheckFriendshipsStatusResponse, error)
 }
 
