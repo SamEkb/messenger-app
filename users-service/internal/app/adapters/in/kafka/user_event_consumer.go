@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
+	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/Shopify/sarama"
 )
 
@@ -21,72 +22,103 @@ type EventHandler interface {
 }
 
 type Consumer struct {
-	consumer  sarama.Consumer
-	handler   EventHandler
-	topics    []string
-	ready     chan bool
-	canceller func()
+	consumerGroup sarama.ConsumerGroup
+	handler       EventHandler
+	topics        []string
+	ready         chan bool
+	canceller     func()
 }
 
-func NewConsumer(handler EventHandler) (*Consumer, error) {
-	brokers := getBrokers()
-	if len(brokers) == 0 {
-		return nil, fmt.Errorf("no Kafka brokers configured")
+func NewConsumerWithConfig(handler EventHandler, kafkaConfig *env.KafkaConfig) (*Consumer, error) {
+	if kafkaConfig == nil {
+		return nil, fmt.Errorf("kafka config is nil")
 	}
 
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
+	config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRoundRobin
 
-	consumer, err := sarama.NewConsumer(brokers, config)
+	consumerGroup, err := sarama.NewConsumerGroup(kafkaConfig.Brokers, kafkaConfig.ConsumerGroup, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Kafka consumer: %w", err)
+		return nil, fmt.Errorf("failed to create Kafka consumer group: %w", err)
 	}
 
 	return &Consumer{
-		consumer: consumer,
-		handler:  handler,
-		topics:   []string{userEventsTopic},
-		ready:    make(chan bool),
+		consumerGroup: consumerGroup,
+		handler:       handler,
+		topics:        []string{kafkaConfig.Topic},
+		ready:         make(chan bool),
 	}, nil
+}
+
+type consumerGroupHandler struct {
+	handler EventHandler
+	ready   chan bool
+}
+
+func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error {
+	log.Printf("Consumer group session setup: member ID = %s", session.MemberID())
+	close(h.ready)
+	return nil
+}
+
+func (h *consumerGroupHandler) Cleanup(session sarama.ConsumerGroupSession) error {
+	log.Printf("Consumer group session cleanup: member ID = %s", session.MemberID())
+	return nil
+}
+
+func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	for msg := range claim.Messages() {
+		log.Printf("Received message from topic %s, partition %d, offset %d",
+			msg.Topic, msg.Partition, msg.Offset)
+
+		if msg.Topic == userEventsTopic {
+			var event events.UserRegisteredEvent
+			if err := json.Unmarshal(msg.Value, &event); err != nil {
+				log.Printf("Failed to unmarshal user event: %v", err)
+				continue
+			}
+
+			if err := h.handler.HandleUserRegistered(session.Context(), &event); err != nil {
+				log.Printf("Error handling message: %v", err)
+				continue
+			}
+		}
+
+		session.MarkMessage(msg, "")
+	}
+	return nil
 }
 
 func (c *Consumer) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	c.canceller = cancel
 
-	for _, topic := range c.topics {
-		partitions, err := c.consumer.Partitions(topic)
-		if err != nil {
-			return fmt.Errorf("failed to get partitions for topic %s: %w", topic, err)
-		}
-
-		for _, partition := range partitions {
-			pc, err := c.consumer.ConsumePartition(topic, partition, sarama.OffsetNewest)
-			if err != nil {
-				return fmt.Errorf("failed to start consumer for topic %s partition %d: %w", topic, partition, err)
-			}
-
-			go func(pc sarama.PartitionConsumer) {
-				defer pc.Close()
-				for {
-					select {
-					case msg := <-pc.Messages():
-						if err := c.handleMessage(ctx, msg); err != nil {
-							log.Printf("Error handling message: %v", err)
-						}
-					case err := <-pc.Errors():
-						log.Printf("Consumer error: %v", err)
-					case <-ctx.Done():
-						return
-					}
-				}
-			}(pc)
-		}
+	handler := &consumerGroupHandler{
+		handler: c.handler,
+		ready:   c.ready,
 	}
 
+	go func() {
+		for {
+			err := c.consumerGroup.Consume(ctx, c.topics, handler)
+			if err != nil {
+				log.Printf("Error from consumer group: %v", err)
+			}
+
+			if ctx.Err() != nil {
+				log.Println("Context cancelled, stopping consumer")
+				return
+			}
+
+			c.ready = make(chan bool)
+			handler.ready = c.ready
+		}
+	}()
+
+	<-c.ready
 	log.Println("Kafka consumer started")
-	c.ready <- true
 	return nil
 }
 
@@ -94,30 +126,14 @@ func (c *Consumer) Close() error {
 	if c.canceller != nil {
 		c.canceller()
 	}
-	if c.consumer != nil {
-		return c.consumer.Close()
+	if c.consumerGroup != nil {
+		return c.consumerGroup.Close()
 	}
 	return nil
 }
 
 func (c *Consumer) Ready() <-chan bool {
 	return c.ready
-}
-
-func (c *Consumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
-	log.Printf("Received message from topic %s, partition %d, offset %d",
-		msg.Topic, msg.Partition, msg.Offset)
-
-	if msg.Topic == userEventsTopic {
-		var event events.UserRegisteredEvent
-		if err := json.Unmarshal(msg.Value, &event); err != nil {
-			return fmt.Errorf("failed to unmarshal user event: %w", err)
-		}
-
-		return c.handler.HandleUserRegistered(ctx, &event)
-	}
-
-	return fmt.Errorf("unknown topic: %s", msg.Topic)
 }
 
 func getBrokers() []string {

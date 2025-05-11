@@ -28,7 +28,7 @@ func main() {
 
 	kafkaServer := kafka.NewUsersServiceServer(userUseCase, log)
 
-	consumer, err := kafka.NewConsumer(kafkaServer)
+	consumer, err := kafka.NewConsumerWithConfig(kafkaServer, config.Kafka)
 	if err != nil {
 		log.Error("failed to create Kafka consumer", "error", err)
 		panic(err)

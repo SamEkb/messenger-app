@@ -68,7 +68,7 @@ func LoadConfig() (*Config, error) {
 
 	c.Kafka.Brokers = getEnvAsSlice("KAFKA_BROKERS", []string{DefaultKafkaBroker})
 	c.Kafka.Topic = getEnv("KAFKA_PRODUCER_TOPIC", DefaultKafkaTopic)
-	c.Kafka.ConsumerGroup = getEnv("KAFKA_CONSUMER_GROUP", "auth-service")
+	c.Kafka.ConsumerGroup = getEnv("KAFKA_CONSUMER_GROUP", "users-service-group")
 	c.Kafka.MaxRetry = getEnvAsInt("KAFKA_MAX_RETRY", DefaultKafkaMaxRetry)
 	c.Kafka.RetryInterval = getEnvAsDuration("KAFKA_RETRY_INTERVAL", DefaultKafkaRetryInterval)
 
