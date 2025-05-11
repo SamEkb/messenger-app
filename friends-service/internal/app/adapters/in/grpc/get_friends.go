@@ -19,21 +19,21 @@ func (s *FriendshipServiceServer) GetFriendsList(ctx context.Context, req *frien
 	protoFriends := make([]*friends.FriendInfo, 0, len(friendsList))
 	for _, f := range friendsList {
 		protoFriends = append(protoFriends, &friends.FriendInfo{
-			UserId:    f.RecipientID(),
-			Nickname:  f.FriendsNickName(),
-			AvatarUrl: f.FriendsAvatarURL(),
-			Status:    mapStatusToProto(f.Status()),
-			CreatedAt: timestamppb.New(f.CreatedAt()),
-			UpdatedAt: timestamppb.New(f.UpdatedAt()),
+			UserId:    f.RecipientID(), // или f.requestorID, если нужен инициатор
+			Nickname:  "",              // TODO: получить из users-service
+			AvatarUrl: "",              // TODO: получить из users-service
+			Status:    mapStatusToProto(f.status),
+			CreatedAt: timestamppb.New(f.createdAt),
+			UpdatedAt: timestamppb.New(f.updatedAt),
 		})
 	}
 
-	s.logger.Info("friends list retrieved")
 	return &friends.GetFriendsListResponse{
 		Friends: protoFriends,
 	}, nil
 }
 
+// Маппинг строки статуса в proto enum
 func mapStatusToProto(status string) friends.FriendshipStatus {
 	switch status {
 	case "REQUESTED":
