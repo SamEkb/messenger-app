@@ -77,13 +77,6 @@ func LoadConfig() (*Config, error) {
 	c.Clients.Users.Host = getEnv("USERS_SERVICE_HOST", "localhost")
 	c.Clients.Users.Port = getEnvAsInt("USERS_SERVICE_PORT", 9004)
 
-	// Database configuration
-	c.DBHost = getEnv("DB_HOST", "localhost")
-	c.DBPort = getEnv("DB_PORT", "5432")
-	c.DBUser = getEnv("DB_USER", "postgres")
-	c.DBPassword = getEnv("DB_PASSWORD", "postgres")
-	c.DBName = getEnv("DB_NAME", "friends_service")
-
 	return c, nil
 }
 
