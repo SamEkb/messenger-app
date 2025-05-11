@@ -20,6 +20,8 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+var _ friends.FriendsServiceServer = (*FriendshipServiceServer)(nil)
+
 type FriendshipServiceServer struct {
 	friends.UnimplementedFriendsServiceServer
 	friendshipUseCase ports.FriendshipUseCase

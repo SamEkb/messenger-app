@@ -12,9 +12,10 @@ type UseCase struct {
 	logger           *slog.Logger
 }
 
-func NewUseCase(friendRepository ports.FriendshipRepository, logger *slog.Logger) *UseCase {
+func NewUseCase(friendRepository ports.FriendshipRepository, userClient ports.UserServiceClient, logger *slog.Logger) *UseCase {
 	return &UseCase{
 		friendRepository: friendRepository,
+		userClient:       userClient,
 		logger:           logger,
 	}
 }

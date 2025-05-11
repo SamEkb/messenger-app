@@ -50,8 +50,8 @@ message GetFriendsListResponse {
 message SendFriendRequestRequest {
   // Unique identifier of the user sending the request
   string user_id = 1;
-  // Nickname of the user to send friend request to
-  string friend_nickname = 2;
+  // Unique identifier of the user to send friend request to
+  string friend_id = 2;
 }
 
 // SendFriendRequestResponse represents a response to send friend request.
@@ -66,8 +66,8 @@ message SendFriendRequestResponse {
 message AcceptFriendRequestRequest {
   // Unique identifier of the user accepting the request
   string user_id = 1;
-  // Nickname of the user whose request is being accepted
-  string friend_nickname = 2;
+  // Unique identifier of the user whose request is being accepted
+  string friend_id = 2;
 }
 
 // AcceptFriendRequestResponse represents a response to accept friend request.
@@ -82,8 +82,8 @@ message AcceptFriendRequestResponse {
 message RejectFriendRequestRequest {
   // Unique identifier of the user rejecting the request
   string user_id = 1;
-  // Nickname of the user whose request is being rejected
-  string friend_nickname = 2;
+  // Unique identifier of the user whose request is being rejected
+  string friend_id = 2;
 }
 
 // RejectFriendRequestResponse represents a response to reject friend request.
@@ -98,8 +98,8 @@ message RejectFriendRequestResponse {
 message RemoveFriendRequest {
   // Unique identifier of the user removing a friend
   string user_id = 1;
-  // Nickname of the user being removed
-  string friend_nickname = 2;
+  // Unique identifier of the user being removed
+  string friend_id = 2;
 }
 
 // RemoveFriendResponse represents a response to remove a friend.
