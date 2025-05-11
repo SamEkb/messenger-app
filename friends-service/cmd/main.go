@@ -2,34 +2,28 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/SamEkb/messenger-app/friends-service/internal/server"
+	"github.com/SamEkb/messenger-app/friends-service/config/env"
+	"github.com/SamEkb/messenger-app/friends-service/internal/app/repositories/in_memory"
+	"github.com/SamEkb/messenger-app/friends-service/internal/app/usecases/friendship"
+	"github.com/SamEkb/messenger-app/friends-service/pkg/logger"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		log.Println("received shutdown signal")
-		cancel()
-	}()
-
-	server, err := server.NewServer()
+	cfg, err := env.LoadConfig()
 	if err != nil {
-		log.Fatalf("server init error: %v", err)
+		panic(err)
 	}
-	defer server.Close()
 
-	// Run gRPC and HTTP servers
-	if err := server.RunServers(ctx); err != nil {
-		log.Fatalf("server run error: %v", err)
-	}
+	log := logger.NewLogger(cfg.Debug, cfg.AppName)
+	log.Info("starting friends service")
+
+	repository := in_memory.NewFriendshipRepository(log)
+
+	useCase := friendship.NewUseCase(repository, log)
+
 }

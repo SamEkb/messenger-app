@@ -20,7 +20,6 @@ func NewChatUseCase(chatRepository ports.ChatRepository,
 	friendClient ports.FriendServiceClient,
 	logger *slog.Logger,
 ) *UseCase {
-
 	return &UseCase{
 		chatRepository: chatRepository,
 		userClient:     userClient,

@@ -22,10 +22,6 @@ func NewAuthUseCase(
 	tokenTTL time.Duration,
 	logger *slog.Logger,
 ) *UseCase {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
 	return &UseCase{
 		authRepo:           authRepo,
 		tokenRepo:          tokenRepo,

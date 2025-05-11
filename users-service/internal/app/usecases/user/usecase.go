@@ -14,10 +14,6 @@ type UseCase struct {
 }
 
 func NewUseCase(userRepository ports.UserRepository, logger *slog.Logger) *UseCase {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
 	return &UseCase{
 		userRepository: userRepository,
 		logger:         logger.With("component", "user_usecase"),

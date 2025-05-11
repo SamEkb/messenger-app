@@ -14,7 +14,7 @@ import (
 var _ ports.FriendshipRepository = (*FriendshipRepository)(nil)
 
 type FriendshipRepository struct {
-	friendships map[string]*models.Friendship
+	friendships map[string][]*models.Friendship // userID -> список дружеских отношений
 	mx          sync.RWMutex
 	logger      *slog.Logger
 }
@@ -25,155 +25,144 @@ func NewFriendshipRepository(logger *slog.Logger) *FriendshipRepository {
 	}
 
 	return &FriendshipRepository{
-		friendships: make(map[string]*models.Friendship),
+		friendships: make(map[string][]*models.Friendship),
+		logger:      logger.With("component", "friendship_repository"),
 	}
 }
 
-func (r *FriendshipRepository) Create(ctx context.Context, friendship *models.Friendship) error {
-	r.logger.Info("creating friendship",
-		slog.String("user_id", friendship.UserID()), slog.String("friend_id", friendship.FriendID()),
-	)
-	r.mx.Lock()
-	defer r.mx.Unlock()
-
-	key := fmt.Sprintf("%s:%s", friendship.UserID(), friendship.FriendID())
-	if _, exists := r.friendships[key]; exists {
-		return errors.NewAlreadyExistsError("friendship already exists", friendship.UserID(), friendship.FriendID())
-	}
-	r.friendships[key] = friendship
-
-	r.logger.Info("friendship created",
-		slog.String("user_id", friendship.UserID()), slog.String("friend_id", friendship.FriendID()),
-	)
-	return nil
-
-}
-
-func (r *FriendshipRepository) GetByUserIDs(ctx context.Context, userID1, userID2 string) (*models.Friendship, error) {
-	if userID1 == userID2 {
-		return nil, errors.NewInvalidInputError("user IDs must be different",
-			"userID1", userID1, "userID2", userID2)
-	}
-
-	key1 := fmt.Sprintf("%s:%s", userID1, userID2)
-	key2 := fmt.Sprintf("%s:%s", userID2, userID1)
-
+func (r *FriendshipRepository) GetFriends(ctx context.Context, userID string) ([]*models.Friendship, error) {
 	r.mx.RLock()
 	defer r.mx.RUnlock()
 
-	if friendship, ok := r.friendships[key1]; ok {
-		r.logger.Info("friendship found", slog.String("user_id", userID1), slog.String("friend_id", userID2))
-		return friendship, nil
+	friendships, exists := r.friendships[userID]
+	if !exists {
+		return []*models.Friendship{}, nil
 	}
 
-	if friendship, ok := r.friendships[key2]; ok {
-		r.logger.Info("friendship found", slog.String("user_id", userID2), slog.String("friend_id", userID1))
-		return friendship, nil
-	}
-
-	r.logger.Info("friendship not found", slog.String("user_id", userID1), slog.String("friend_id", userID2))
-	return nil, nil
-}
-
-func (r *FriendshipRepository) GetAllFriendships(ctx context.Context, userID string) ([]*models.Friendship, error) {
-	r.logger.Info("getting all friendships", slog.String("user_id", userID))
-	r.mx.RLock()
-	defer r.mx.RUnlock()
-
-	var result []*models.Friendship
-	for _, friendship := range r.friendships {
-		if friendship.UserID() == userID || friendship.FriendID() == userID {
-			result = append(result, friendship)
+	acceptedFriendships := make([]*models.Friendship, 0)
+	for _, friendship := range friendships {
+		if friendship.IsAccepted() {
+			acceptedFriendships = append(acceptedFriendships, friendship)
 		}
 	}
 
-	r.logger.Info("all friendships found", slog.String("user_id", userID))
-
-	return result, nil
+	return acceptedFriendships, nil
 }
 
-func (r *FriendshipRepository) Update(ctx context.Context, friendship *models.Friendship) error {
-	r.logger.Info("updating friendship",
-		slog.String("user_id", friendship.UserID()), slog.String("friend_id", friendship.FriendID()))
-
-	key := fmt.Sprintf("%s:%s", friendship.UserID(), friendship.FriendID())
-
+func (r *FriendshipRepository) SendFriendRequest(ctx context.Context, requestorID, recipientID string) error {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
-	if _, exists := r.friendships[key]; !exists {
-		reverseKey := fmt.Sprintf("%s:%s", friendship.FriendID(), friendship.UserID())
-		if _, exists := r.friendships[reverseKey]; !exists {
-			return errors.NewNotFoundError("friendship not found", friendship.UserID(), friendship.FriendID())
-		}
-		key = reverseKey
+	if r.friendshipExists(requestorID, recipientID) {
+		return errors.NewInvalidInputError("friendship request already exists")
 	}
 
-	r.friendships[key] = friendship
+	friendship, err := models.NewFriendship(requestorID, recipientID)
+	if err != nil {
+		return err
+	}
 
-	r.logger.Info("friendship updated",
-		slog.String("user_id", friendship.UserID()), slog.String("friend_id", friendship.FriendID()))
+	r.addFriendshipToUser(requestorID, friendship)
+	r.addFriendshipToUser(recipientID, friendship)
+
 	return nil
 }
 
-func (r *FriendshipRepository) Delete(ctx context.Context, friendship *models.Friendship) error {
-	r.logger.Info("deleting friendship",
-		slog.String("user_id", friendship.UserID()), slog.String("friend_id", friendship.FriendID()))
+func (r *FriendshipRepository) AcceptFriendRequest(ctx context.Context, recipientID, requestorID string) error {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
-	key := fmt.Sprintf("%s:%s", friendship.UserID(), friendship.FriendID())
-
-	if _, exists := r.friendships[key]; !exists {
-		reverseKey := fmt.Sprintf("%s:%s", friendship.FriendID(), friendship.UserID())
-		if _, exists := r.friendships[reverseKey]; !exists {
-			return errors.NewNotFoundError("friendship not found", friendship.UserID(), friendship.FriendID())
-		}
-		key = reverseKey
+	friendship, err := r.findFriendshipRequest(recipientID, requestorID)
+	if err != nil {
+		return err
 	}
 
-	delete(r.friendships, key)
+	if !friendship.IsRequested() {
+		return errors.NewInvalidInputError(fmt.Sprintf("friendship is not in REQUESTED state, current state: %s", friendship.Status()))
+	}
 
-	r.logger.Info("friendship deleted",
-		slog.String("user_id", friendship.UserID()), slog.String("friend_id", friendship.FriendID()))
+	friendship.Accept()
 	return nil
 }
 
-func (r *FriendshipRepository) CheckFriendships(ctx context.Context, userIDs []string) ([]ports.UserPair, bool, error) {
-	if len(userIDs) < 2 {
-		return nil, true, errors.NewInvalidInputError("user IDs must contain at least 2 elements", "userIDs", userIDs)
+func (r *FriendshipRepository) RejectFriendRequest(ctx context.Context, recipientID, requestorID string) error {
+	r.mx.Lock()
+	defer r.mx.Unlock()
+
+	friendship, err := r.findFriendshipRequest(recipientID, requestorID)
+	if err != nil {
+		return err
 	}
 
-	mainUserID := userIDs[0]
-	otherUserIDs := userIDs[1:]
+	if !friendship.IsRequested() {
+		return errors.NewInvalidInputError(fmt.Sprintf("friendship is not in REQUESTED state, current state: %s", friendship.Status()))
+	}
 
-	r.mx.RLock()
-	defer r.mx.RUnlock()
+	friendship.Reject()
+	return nil
+}
 
-	var nonFriendPairs []ports.UserPair
-	for _, otherUserID := range otherUserIDs {
-		key1 := fmt.Sprintf("%s:%s", mainUserID, otherUserID)
-		key2 := fmt.Sprintf("%s:%s", otherUserID, mainUserID)
+func (r *FriendshipRepository) Delete(ctx context.Context, userID string, friendID string) error {
+	r.mx.Lock()
+	defer r.mx.Unlock()
 
-		friendship1, exists1 := r.friendships[key1]
-		friendship2, exists2 := r.friendships[key2]
+	r.removeFriendship(userID, friendID)
+	r.removeFriendship(friendID, userID)
 
-		isFriend := (exists1 && friendship1.IsAccepted()) ||
-			(exists2 && friendship2.IsAccepted())
+	return nil
+}
 
-		if !isFriend {
-			nonFriendPairs = append(nonFriendPairs, ports.UserPair{
-				UserID1: mainUserID,
-				UserID2: otherUserID,
-			})
+func (r *FriendshipRepository) friendshipExists(user1ID, user2ID string) bool {
+	friendships, exists := r.friendships[user1ID]
+	if !exists {
+		return false
+	}
+
+	for _, friendship := range friendships {
+		if (friendship.RequestorID() == user1ID && friendship.RecipientID() == user2ID) ||
+			(friendship.RequestorID() == user2ID && friendship.RecipientID() == user1ID) {
+			return true
 		}
 	}
 
-	allAreFriends := len(nonFriendPairs) == 0
-	r.logger.Info("friendships checked", slog.String("user_id", mainUserID),
-		slog.String("friend_ids", fmt.Sprintf("%v", otherUserIDs)),
-		slog.Bool("all_are_friends", allAreFriends),
-		slog.String("non_friend_pairs", fmt.Sprintf("%v", nonFriendPairs)),
-	)
-	return nonFriendPairs, allAreFriends, nil
+	return false
+}
+
+func (r *FriendshipRepository) addFriendshipToUser(userID string, friendship *models.Friendship) {
+	if _, exists := r.friendships[userID]; !exists {
+		r.friendships[userID] = make([]*models.Friendship, 0)
+	}
+	r.friendships[userID] = append(r.friendships[userID], friendship)
+}
+
+func (r *FriendshipRepository) findFriendshipRequest(recipientID, requestorID string) (*models.Friendship, error) {
+	friendships, exists := r.friendships[recipientID]
+	if !exists {
+		return nil, errors.NewNotFoundError("friendship request not found")
+	}
+
+	for _, friendship := range friendships {
+		if friendship.RequestorID() == requestorID && friendship.RecipientID() == recipientID {
+			return friendship, nil
+		}
+	}
+
+	return nil, errors.NewNotFoundError("friendship request not found")
+}
+
+func (r *FriendshipRepository) removeFriendship(userID, otherUserID string) {
+	friendships, exists := r.friendships[userID]
+	if !exists {
+		return
+	}
+
+	updatedFriendships := make([]*models.Friendship, 0)
+	for _, friendship := range friendships {
+		if !((friendship.RequestorID() == userID && friendship.RecipientID() == otherUserID) ||
+			(friendship.RequestorID() == otherUserID && friendship.RecipientID() == userID)) {
+			updatedFriendships = append(updatedFriendships, friendship)
+		}
+	}
+
+	r.friendships[userID] = updatedFriendships
 }
