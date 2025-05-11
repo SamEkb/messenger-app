@@ -6,7 +6,7 @@ import (
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/grpc"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/kafka"
-	"github.com/SamEkb/messenger-app/users-service/internal/app/repository/user/in_memory"
+	"github.com/SamEkb/messenger-app/users-service/internal/app/repositories/user/in_memory"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/usecases/user"
 	"github.com/SamEkb/messenger-app/users-service/pkg/logger"
 )
