@@ -16,15 +16,18 @@ type FriendshipUseCase interface {
 }
 
 type FriendshipDto struct {
-	id          string
-	requestorID string
-	recipientID string
-	status      string
-	createdAt   time.Time
-	updatedAt   time.Time
+	id               string
+	requestorID      string
+	recipientID      string
+	friendsNickName  string
+	friendsAvatarURL string
+	status           string
+	createdAt        time.Time
+	updatedAt        time.Time
 }
 
-func NewFriendshipDto(id, requestorID, recipientID, status string, createdAt, updatedAt time.Time) (*FriendshipDto, error) {
+func NewFriendshipDto(id, requestorID, recipientID, friendsNickName, friendsAvatarURL, status string,
+	createdAt, updatedAt time.Time) (*FriendshipDto, error) {
 	if id == "" {
 		return nil, errors.NewInvalidInputError("id cannot be empty")
 	}
@@ -33,6 +36,9 @@ func NewFriendshipDto(id, requestorID, recipientID, status string, createdAt, up
 	}
 	if recipientID == "" {
 		return nil, errors.NewInvalidInputError("recipientID cannot be empty")
+	}
+	if friendsNickName == "" {
+		return nil, errors.NewInvalidInputError("friendsNickName cannot be empty")
 	}
 	if status == "" {
 		return nil, errors.NewInvalidInputError("status cannot be empty")
@@ -45,12 +51,14 @@ func NewFriendshipDto(id, requestorID, recipientID, status string, createdAt, up
 	}
 
 	return &FriendshipDto{
-		id:          id,
-		requestorID: requestorID,
-		recipientID: recipientID,
-		status:      status,
-		createdAt:   createdAt,
-		updatedAt:   updatedAt,
+		id:               id,
+		requestorID:      requestorID,
+		recipientID:      recipientID,
+		friendsNickName:  friendsNickName,
+		friendsAvatarURL: friendsAvatarURL,
+		status:           status,
+		createdAt:        createdAt,
+		updatedAt:        updatedAt,
 	}, nil
 }
 
@@ -64,6 +72,14 @@ func (f *FriendshipDto) RequestorID() string {
 
 func (f *FriendshipDto) RecipientID() string {
 	return f.recipientID
+}
+
+func (f *FriendshipDto) FriendsNickName() string {
+	return f.friendsNickName
+}
+
+func (f *FriendshipDto) FriendsAvatarURL() string {
+	return f.friendsAvatarURL
 }
 
 func (f *FriendshipDto) Status() string {

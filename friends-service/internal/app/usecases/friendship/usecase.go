@@ -8,6 +8,7 @@ import (
 
 type UseCase struct {
 	friendRepository ports.FriendshipRepository
+	userClient       ports.UserServiceClient
 	logger           *slog.Logger
 }
 

@@ -20,14 +20,15 @@ func (s *FriendshipServiceServer) GetFriendsList(ctx context.Context, req *frien
 	for _, f := range friendsList {
 		protoFriends = append(protoFriends, &friends.FriendInfo{
 			UserId:    f.RecipientID(),
-			Nickname:  "", // TODO: получить из users-service
-			AvatarUrl: "", // TODO: получить из users-service
+			Nickname:  f.FriendsNickName(),
+			AvatarUrl: f.FriendsAvatarURL(),
 			Status:    mapStatusToProto(f.Status()),
 			CreatedAt: timestamppb.New(f.CreatedAt()),
 			UpdatedAt: timestamppb.New(f.UpdatedAt()),
 		})
 	}
 
+	s.logger.Info("friends list retrieved")
 	return &friends.GetFriendsListResponse{
 		Friends: protoFriends,
 	}, nil

@@ -9,6 +9,12 @@ import (
 func (u *UseCase) GetFriends(ctx context.Context, userID string) ([]*ports.FriendshipDto, error) {
 	u.logger.Info("getting friends")
 
+	profile, err := u.userClient.GetUserProfile(userID)
+	if err != nil {
+		u.logger.Error("failed to get user profile", "error", err)
+		return nil, err
+	}
+
 	friends, err := u.friendRepository.GetFriends(ctx, userID)
 	if err != nil {
 		u.logger.Error("failed to get friends", "error", err)
@@ -21,6 +27,8 @@ func (u *UseCase) GetFriends(ctx context.Context, userID string) ([]*ports.Frien
 			f.ID().String(),
 			f.RequestorID(),
 			f.RecipientID(),
+			profile.Nickname,
+			profile.AvatarURL,
 			string(f.Status()),
 			f.CreatedAt(),
 			f.UpdatedAt(),
