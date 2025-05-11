@@ -13,6 +13,12 @@ type FriendshipUseCase interface {
 	AcceptFriendRequest(ctx context.Context, recipientID, requestorID string) error
 	RejectFriendRequest(ctx context.Context, recipientID, requestorID string) error
 	DeleteFriend(ctx context.Context, userID string, friendID string) error
+	CheckMultipleFriendships(ctx context.Context, userIDs []string) ([]UserPair, error)
+}
+
+type UserPair struct {
+	UserID1 string
+	UserID2 string
 }
 
 type FriendshipDto struct {
