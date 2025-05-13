@@ -2,44 +2,52 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/SamEkb/messenger-app/users-service/internal/server"
+	"github.com/SamEkb/messenger-app/users-service/config/env"
+	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/grpc"
+	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/kafka"
+	"github.com/SamEkb/messenger-app/users-service/internal/app/repositories/user/in_memory"
+	"github.com/SamEkb/messenger-app/users-service/internal/app/usecases/user"
+	"github.com/SamEkb/messenger-app/users-service/pkg/logger"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		log.Println("received shutdown signal")
-		cancel()
-	}()
-
-	serv, err := server.NewServer()
+	config, err := env.LoadConfig()
 	if err != nil {
-		log.Fatalf("server init error: %v", err)
-	}
-	defer serv.Close()
-
-	if err := serv.Start(ctx); err != nil {
-		log.Fatalf("failed to start Kafka consumer: %v", err)
+		panic(err)
 	}
 
-	select {
-	case <-serv.Consumer().Ready():
-		log.Println("Kafka consumer is ready")
-	case <-ctx.Done():
-		log.Fatalf("context cancelled before Kafka consumer was ready")
+	log := logger.NewLogger(config.Debug, config.AppName)
+	log.Info("starting users service")
+
+	usersRepo := in_memory.NewUserRepository(log)
+	userUseCase := user.NewUseCase(usersRepo, log)
+
+	kafkaServer := kafka.NewUsersServiceServer(userUseCase, log)
+
+	consumer, err := kafka.NewConsumerWithConfig(kafkaServer, config.Kafka)
+	if err != nil {
+		log.Error("failed to create Kafka consumer", "error", err)
+		panic(err)
 	}
 
-	if err := serv.RunServers(ctx); err != nil {
-		log.Fatalf("server run error: %v", err)
+	if err := consumer.Start(ctx); err != nil {
+		log.Error("failed to start Kafka consumer", "error", err)
+		panic(err)
+	}
+	defer consumer.Close()
+
+	grpcServer, err := grpc.NewServer(config.Server, userUseCase, log)
+	if err != nil {
+		log.Error("failed to create grpc server", "error", err)
+		panic(err)
+	}
+
+	if err = grpcServer.RunServers(ctx); err != nil {
+		log.Error("failed to run grpc server", "error", err)
+		panic(err)
 	}
 }

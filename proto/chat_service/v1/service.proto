@@ -46,9 +46,7 @@ service ChatService {
 
   // GetUserChats retrieves all chats where the user is a participant.
   rpc GetUserChats(GetUserChatsRequest) returns (GetUserChatsResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/users/{user_id}/chats"
-    };
+    option (google.api.http) = {get: "/api/v1/users/{user_id}/chats"};
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Get user chats"
@@ -71,9 +69,7 @@ service ChatService {
 
   // GetChatHistory retrieves message history for a chat.
   rpc GetChatHistory(GetChatHistoryRequest) returns (GetChatHistoryResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/chats/{chat_id}/messages"
-    };
+    option (google.api.http) = {get: "/api/v1/chats/{chat_id}/messages"};
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Get chat history"

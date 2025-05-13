@@ -50,8 +50,8 @@ message GetFriendsListResponse {
 message SendFriendRequestRequest {
   // Unique identifier of the user sending the request
   string user_id = 1;
-  // Nickname of the user to send friend request to
-  string friend_nickname = 2;
+  // Unique identifier of the user to send friend request to
+  string friend_id = 2;
 }
 
 // SendFriendRequestResponse represents a response to send friend request.
@@ -66,8 +66,8 @@ message SendFriendRequestResponse {
 message AcceptFriendRequestRequest {
   // Unique identifier of the user accepting the request
   string user_id = 1;
-  // Nickname of the user whose request is being accepted
-  string friend_nickname = 2;
+  // Unique identifier of the user whose request is being accepted
+  string friend_id = 2;
 }
 
 // AcceptFriendRequestResponse represents a response to accept friend request.
@@ -82,8 +82,8 @@ message AcceptFriendRequestResponse {
 message RejectFriendRequestRequest {
   // Unique identifier of the user rejecting the request
   string user_id = 1;
-  // Nickname of the user whose request is being rejected
-  string friend_nickname = 2;
+  // Unique identifier of the user whose request is being rejected
+  string friend_id = 2;
 }
 
 // RejectFriendRequestResponse represents a response to reject friend request.
@@ -98,8 +98,8 @@ message RejectFriendRequestResponse {
 message RemoveFriendRequest {
   // Unique identifier of the user removing a friend
   string user_id = 1;
-  // Nickname of the user being removed
-  string friend_nickname = 2;
+  // Unique identifier of the user being removed
+  string friend_id = 2;
 }
 
 // RemoveFriendResponse represents a response to remove a friend.
@@ -126,4 +126,27 @@ message CheckFriendshipStatusResponse {
   google.protobuf.Timestamp created_at = 2;
   // When the friendship status was last updated
   google.protobuf.Timestamp updated_at = 3;
+}
+
+// CheckFriendshipsStatusRequest represents a request to check friendships status.
+message CheckFriendshipsStatusRequest {
+  // Users ids
+  repeated string user_ids = 1;
+}
+
+// CheckFriendshipsStatusResponse represents a response to check friendships status.
+message CheckFriendshipsStatusResponse {
+  // Users pair
+  message UserPair {
+    // user 1 id
+    string user_id1 = 1;
+    // user 2 id
+    string user_id2 = 2;
+  }
+
+  // Non friends pairs
+  repeated UserPair non_friend_pairs = 1;
+
+  // If all friends true
+  bool all_are_friends = 2;
 }

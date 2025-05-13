@@ -24,6 +24,21 @@ message GetUserProfileResponse {
   string avatar_url = 4;
 }
 
+// GetProfilesRequest represents a request to get user's profile.
+message GetProfilesRequest {
+  // Users ids
+  repeated string user_ids = 1;
+}
+
+// GetProfilesResponse represents a response to get users profiles.
+message GetProfilesResponse {
+  // founded users
+  map<string, UserProfile> profiles = 1;
+
+  // Not founded ids
+  repeated string not_found_ids = 2;
+}
+
 // GetUserProfileByNicknameRequest represents a request to get user's profile by nickname.
 message GetUserProfileByNicknameRequest {
   // Nickname for display in the system.
@@ -44,6 +59,12 @@ message GetUserProfileByNicknameResponse {
 
 // UpdateUserProfileRequest represents a request to update user's profile.
 message UpdateUserProfileRequest {
+  // User's profile
+  UserProfile profile = 1;
+}
+
+// User's profile
+message UserProfile {
   // Unique identifier of the user.
   string user_id = 1;
   // Username for display in the system.

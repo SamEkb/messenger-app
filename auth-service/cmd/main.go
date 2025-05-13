@@ -2,33 +2,53 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/SamEkb/messenger-app/auth-service/internal/server"
+	"github.com/SamEkb/messenger-app/auth-service/config/env"
+	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/in/grpc"
+	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/out/kafka"
+	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/in_memory"
+	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
+	"github.com/SamEkb/messenger-app/auth-service/pkg/logger"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		log.Println("received shutdown signal")
-		cancel()
-	}()
-
-	serv, err := server.NewServer()
+	config, err := env.LoadConfig()
 	if err != nil {
-		log.Fatalf("server init error: %v", err)
+		panic(err)
 	}
-	defer serv.Close()
 
-	if err := serv.RunServers(ctx); err != nil {
-		log.Fatalf("server run error: %v", err)
+	log := logger.NewLogger(config.Debug, config.AppName)
+	log.Info("starting auth service")
+
+	authRepository := in_memory.NewAuthRepository(log)
+	tokenRepository := in_memory.NewTokenRepository(log)
+
+	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
+	if err != nil {
+		log.Error("failed to create Kafka producer", "error", err)
+		panic(err)
+	}
+	defer userEventPublisher.Close()
+
+	usecase := auth.NewAuthUseCase(
+		authRepository,
+		tokenRepository,
+		userEventPublisher,
+		config.Auth.TokenTTL,
+		log,
+	)
+
+	server, err := grpc.NewServer(config.Server, usecase, log)
+	if err != nil {
+		log.Error("failed to create grpc server", "error", err)
+		panic(err)
+	}
+
+	if err = server.RunServers(ctx); err != nil {
+		log.Error("failed to run grpc server", "error", err)
+		panic(err)
 	}
 }

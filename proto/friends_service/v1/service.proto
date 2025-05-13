@@ -33,9 +33,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service FriendsService {
   // GetFriendsList retrieves the list of friends for a user.
   rpc GetFriendsList(GetFriendsListRequest) returns (GetFriendsListResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/users/{user_id}/friends"
-    };
+    option (google.api.http) = {get: "/api/v1/users/{user_id}/friends"};
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Get user's friends list"
@@ -84,9 +82,7 @@ service FriendsService {
 
   // RemoveFriend removes a user from the friends list.
   rpc RemoveFriend(RemoveFriendRequest) returns (RemoveFriendResponse) {
-    option (google.api.http) = {
-      delete: "/api/v1/users/{user_id}/friends"
-    };
+    option (google.api.http) = {delete: "/api/v1/users/{user_id}/friends"};
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Remove a friend"
@@ -97,13 +93,19 @@ service FriendsService {
   // CheckFriendshipStatus checks the friendship status between two users.
   // This is an internal API used by other services.
   rpc CheckFriendshipStatus(CheckFriendshipStatusRequest) returns (CheckFriendshipStatusResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/friendships/status"
-    };
+    option (google.api.http) = {get: "/api/v1/friendships/status"};
 
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Check friendship status"
       description: "Checks the friendship status between two users."
+    };
+  }
+
+  // CheckFriendshipsStatus checks the friendship status between one user and other users.
+  rpc CheckFriendshipsStatus(CheckFriendshipsStatusRequest) returns (CheckFriendshipsStatusResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/friends/validate-all"
+      body: "*"
     };
   }
 }

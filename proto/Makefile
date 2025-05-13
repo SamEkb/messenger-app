@@ -44,7 +44,7 @@ vendor:
 
 buf-format:
 	@echo "⇨ Launching buf fromat"
-	$(LOCAL_BIN)/buf format -w
+	$(LOCAL_BIN)/buf format -w --path auth_service --path chat_service --path events --path friends_service --path users_service
 
 buf-lint: install-buf
 	@echo "⇨ Launching buf lint"
