@@ -8,7 +8,7 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/out/kafka"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/in_memory"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/logger"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 func main() {

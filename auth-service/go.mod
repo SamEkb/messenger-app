@@ -5,6 +5,7 @@ go 1.24
 require (
 	buf.build/go/protovalidate v0.12.0
 	github.com/SamEkb/messenger-app/pkg/api v0.0.0-00010101000000-000000000000
+	github.com/SamEkb/messenger-app/pkg/platform/logger v0.0.0-00010101000000-000000000000
 	github.com/Shopify/sarama v1.38.1
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
@@ -51,3 +52,5 @@ require (
 )
 
 replace github.com/SamEkb/messenger-app/pkg/api => ../pkg/api
+
+replace github.com/SamEkb/messenger-app/pkg/platform/logger => ../pkg/platform/logger

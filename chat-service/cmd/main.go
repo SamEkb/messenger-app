@@ -8,7 +8,7 @@ import (
 	grpcclient "github.com/SamEkb/messenger-app/chat-service/internal/app/adapters/out/grpc"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/repositories/in_memory"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/usecases/chat"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/logger"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 func main() {

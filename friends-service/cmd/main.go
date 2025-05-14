@@ -8,7 +8,7 @@ import (
 	grpcclient "github.com/SamEkb/messenger-app/friends-service/internal/app/adapters/out/grpc"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/repositories/in_memory"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/usecases/friendship"
-	"github.com/SamEkb/messenger-app/friends-service/pkg/logger"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	_ "github.com/lib/pq"
 )
 
