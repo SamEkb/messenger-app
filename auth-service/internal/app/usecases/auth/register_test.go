@@ -3,6 +3,7 @@ package auth
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log/slog"
 	"testing"
 
@@ -24,7 +25,6 @@ func TestUseCase_Register(t *testing.T) {
 	tests := map[string]struct {
 		args    args
 		wantErr bool
-		err     error
 		deps    func(t *testing.T) UseCase
 	}{
 		"register successful": {
@@ -37,7 +37,6 @@ func TestUseCase_Register(t *testing.T) {
 				},
 			},
 			wantErr: false,
-			err:     nil,
 			deps: func(t *testing.T) UseCase {
 				var buf bytes.Buffer
 				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
@@ -63,6 +62,69 @@ func TestUseCase_Register(t *testing.T) {
 				}
 			},
 		},
+		"failed to save user": {
+			args: args{
+				ctx: ctx,
+				dto: &ports.RegisterDto{
+					Username: "testuser",
+					Email:    "test@test.ru",
+					Password: "strongAndLongPassword",
+				},
+			},
+			wantErr: true,
+			deps: func(t *testing.T) UseCase {
+				var buf bytes.Buffer
+				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
+					Level: slog.LevelDebug,
+				}))
+
+				mockAuthRepo := mocks.NewAuthRepository(t)
+				mockAuthRepo.EXPECT().
+					Create(ctx, mock.AnythingOfType("*models.User")).
+					Return(errors.New("database error")).
+					Once()
+
+				return UseCase{
+					authRepo: mockAuthRepo,
+					logger:   logger,
+				}
+			},
+		},
+		"failed to publish event": {
+			args: args{
+				ctx: ctx,
+				dto: &ports.RegisterDto{
+					Username: "testuser",
+					Email:    "test@test.ru",
+					Password: "strongAndLongPassword",
+				},
+			},
+			wantErr: true,
+			deps: func(t *testing.T) UseCase {
+				var buf bytes.Buffer
+				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
+					Level: slog.LevelDebug,
+				}))
+
+				mockAuthRepo := mocks.NewAuthRepository(t)
+				mockAuthRepo.EXPECT().
+					Create(ctx, mock.AnythingOfType("*models.User")).
+					Return(nil).
+					Once()
+
+				mockKafkaProducer := mocks.NewUserEventsKafkaProducer(t)
+				mockKafkaProducer.EXPECT().
+					ProduceUserRegisteredEvent(ctx, mock.AnythingOfType("*events.UserRegisteredEvent")).
+					Return(errors.New("kafka error")).
+					Once()
+
+				return UseCase{
+					authRepo:           mockAuthRepo,
+					userEventPublisher: mockKafkaProducer,
+					logger:             logger,
+				}
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -73,7 +135,7 @@ func TestUseCase_Register(t *testing.T) {
 
 			if tc.wantErr {
 				assert.Error(t, err)
-				assert.IsType(t, tc.err, err)
+				assert.Equal(t, models.UserID{}, id)
 			} else {
 				assert.NoError(t, err)
 				assert.NotEqual(t, models.UserID{}, id)
