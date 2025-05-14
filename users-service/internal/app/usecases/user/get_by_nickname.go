@@ -12,7 +12,7 @@ func (uc *UseCase) GetByNickname(ctx context.Context, nickname string) (*ports.U
 
 	if nickname == "" {
 		uc.logger.Debug("User not found", "nickname", nickname)
-		return nil, errors.NewInvalidInputError("nickname", "Nickname cannot be empty")
+		return nil, errors.NewInvalidInputError("Nickname cannot be empty")
 	}
 
 	user, err := uc.userRepository.GetByNickname(ctx, nickname)
