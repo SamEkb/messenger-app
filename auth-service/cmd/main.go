@@ -28,8 +28,7 @@ func main() {
 
 	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
 	if err != nil {
-		log.Error("failed to create Kafka producer", "error", err)
-		panic(err)
+		log.Fatal("failed to create Kafka producer", "error", err)
 	}
 	defer userEventPublisher.Close()
 
@@ -43,12 +42,10 @@ func main() {
 
 	server, err := grpc.NewServer(config.Server, usecase, log)
 	if err != nil {
-		log.Error("failed to create grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to create grpc server", "error", err)
 	}
 
 	if err = server.RunServers(ctx); err != nil {
-		log.Error("failed to run grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to run grpc server", "error", err)
 	}
 }

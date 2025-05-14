@@ -29,20 +29,17 @@ func main() {
 	client := grpcclient.NewClient(cfg.Clients, log)
 	usersClient, err := client.NewUsersServiceClient(ctx)
 	if err != nil {
-		log.Error("failed to create Users Service client", "error", err)
-		panic(err)
+		log.Fatal("failed to create Users Service client", "error", err)
 	}
 
 	useCase := friendship.NewUseCase(repository, usersClient, log)
 
 	server, err := grpcserver.NewServer(cfg.Server, useCase, log)
 	if err != nil {
-		log.Error("failed to create grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to create grpc server", "error", err)
 	}
 
 	if err = server.RunServers(ctx); err != nil {
-		log.Error("failed to run grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to run grpc server", "error", err)
 	}
 }

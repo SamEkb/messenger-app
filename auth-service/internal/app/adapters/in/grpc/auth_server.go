@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -15,6 +14,7 @@ import (
 	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc" // Импорт для интерцептора ошибок
 	apperrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -28,10 +28,10 @@ type Server struct {
 	validator   protovalidate.Validator
 	authUseCase ports.AuthUseCase
 	cfg         *env.ServerConfig
-	logger      *slog.Logger
+	logger      logger.Logger
 }
 
-func NewServer(cfg *env.ServerConfig, authUseCase ports.AuthUseCase, logger *slog.Logger) (*Server, error) {
+func NewServer(cfg *env.ServerConfig, authUseCase ports.AuthUseCase, logger logger.Logger) (*Server, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, apperrors.NewInternalError(err, "failed to initialize validator")

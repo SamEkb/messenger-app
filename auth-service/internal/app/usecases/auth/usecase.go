@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 type UseCase struct {
@@ -12,7 +12,7 @@ type UseCase struct {
 	tokenRepo          ports.TokenRepository
 	userEventPublisher ports.UserEventsKafkaProducer
 	tokenTTL           time.Duration
-	logger             *slog.Logger
+	logger             logger.Logger
 }
 
 func NewAuthUseCase(
@@ -20,7 +20,7 @@ func NewAuthUseCase(
 	tokenRepo ports.TokenRepository,
 	userEventPublisher ports.UserEventsKafkaProducer,
 	tokenTTL time.Duration,
-	logger *slog.Logger,
+	logger logger.Logger,
 ) *UseCase {
 	return &UseCase{
 		authRepo:           authRepo,

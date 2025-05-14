@@ -30,24 +30,20 @@ func main() {
 
 	consumer, err := kafka.NewConsumerWithConfig(kafkaServer, config.Kafka)
 	if err != nil {
-		log.Error("failed to create Kafka consumer", "error", err)
-		panic(err)
+		log.Fatal("failed to create Kafka consumer", "error", err)
 	}
 
 	if err := consumer.Start(ctx); err != nil {
-		log.Error("failed to start Kafka consumer", "error", err)
-		panic(err)
+		log.Fatal("failed to start Kafka consumer", "error", err)
 	}
 	defer consumer.Close()
 
 	grpcServer, err := grpc.NewServer(config.Server, userUseCase, log)
 	if err != nil {
-		log.Error("failed to create grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to create grpc server", "error", err)
 	}
 
 	if err = grpcServer.RunServers(ctx); err != nil {
-		log.Error("failed to run grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to run grpc server", "error", err)
 	}
 }

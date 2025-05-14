@@ -3,12 +3,12 @@ package in_memory
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/friends-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 var _ ports.FriendshipRepository = (*FriendshipRepository)(nil)
@@ -16,14 +16,10 @@ var _ ports.FriendshipRepository = (*FriendshipRepository)(nil)
 type FriendshipRepository struct {
 	friendships map[string][]*models.Friendship // userID -> список дружеских отношений
 	mx          sync.RWMutex
-	logger      *slog.Logger
+	logger      logger.Logger
 }
 
-func NewFriendshipRepository(logger *slog.Logger) *FriendshipRepository {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
+func NewFriendshipRepository(logger logger.Logger) *FriendshipRepository {
 	return &FriendshipRepository{
 		friendships: make(map[string][]*models.Friendship),
 		logger:      logger.With("component", "friendship_repository"),

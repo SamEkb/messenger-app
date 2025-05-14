@@ -1,8 +1,7 @@
 package user
 
 import (
-	"log/slog"
-
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 )
 
@@ -10,10 +9,10 @@ var _ ports.UserUseCase = (*UseCase)(nil)
 
 type UseCase struct {
 	userRepository ports.UserRepository
-	logger         *slog.Logger
+	logger         logger.Logger
 }
 
-func NewUseCase(userRepository ports.UserRepository, logger *slog.Logger) *UseCase {
+func NewUseCase(userRepository ports.UserRepository, logger logger.Logger) *UseCase {
 	return &UseCase{
 		userRepository: userRepository,
 		logger:         logger.With("component", "user_usecase"),

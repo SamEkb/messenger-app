@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 	"github.com/bufbuild/protovalidate-go"
@@ -27,10 +27,10 @@ type UsersServiceServer struct {
 	userUseCase ports.UserUseCase
 	validator   protovalidate.Validator
 	cfg         *env.ServerConfig
-	logger      *slog.Logger
+	logger      logger.Logger
 }
 
-func NewServer(cfg *env.ServerConfig, userUseCase ports.UserUseCase, logger *slog.Logger) (*UsersServiceServer, error) {
+func NewServer(cfg *env.ServerConfig, userUseCase ports.UserUseCase, logger logger.Logger) (*UsersServiceServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize validator: %w", err)

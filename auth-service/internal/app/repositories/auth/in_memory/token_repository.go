@@ -2,12 +2,12 @@ package in_memory
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 var _ ports.TokenRepository = (*TokenRepository)(nil)
@@ -15,14 +15,10 @@ var _ ports.TokenRepository = (*TokenRepository)(nil)
 type TokenRepository struct {
 	mx     sync.Mutex
 	tokens map[models.Token]*models.AuthToken
-	logger *slog.Logger
+	logger logger.Logger
 }
 
-func NewTokenRepository(logger *slog.Logger) *TokenRepository {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
+func NewTokenRepository(logger logger.Logger) *TokenRepository {
 	return &TokenRepository{
 		tokens: make(map[models.Token]*models.AuthToken),
 		logger: logger.With("component", "token_repository"),

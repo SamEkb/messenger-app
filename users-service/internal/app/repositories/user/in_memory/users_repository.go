@@ -2,9 +2,9 @@ package in_memory
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/users-service/pkg/errors"
@@ -16,14 +16,10 @@ type UserRepository struct {
 	mu    sync.RWMutex
 	users map[models.UserID]*models.User
 
-	logger *slog.Logger
+	logger logger.Logger
 }
 
-func NewUserRepository(logger *slog.Logger) *UserRepository {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
+func NewUserRepository(logger logger.Logger) *UserRepository {
 	return &UserRepository{
 		users:  make(map[models.UserID]*models.User),
 		logger: logger.With("component", "user_repository"),

@@ -1,15 +1,14 @@
 package kafka
 
 import (
-	"log/slog"
-
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/Shopify/sarama"
 )
 
 const serviceName = "auth-service"
 
-func NewSaramaConfig(kafkaConfig *env.KafkaConfig, logger *slog.Logger) *sarama.Config {
+func NewSaramaConfig(kafkaConfig *env.KafkaConfig, logger logger.Logger) *sarama.Config {
 	config := sarama.NewConfig()
 
 	config.Producer.RequiredAcks = sarama.WaitForAll
@@ -34,7 +33,7 @@ func NewSaramaConfig(kafkaConfig *env.KafkaConfig, logger *slog.Logger) *sarama.
 }
 
 type SaramaLoggerAdapter struct {
-	logger *slog.Logger
+	logger logger.Logger
 }
 
 func (s SaramaLoggerAdapter) Print(v ...interface{}) {

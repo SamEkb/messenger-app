@@ -4,11 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"log/slog"
-
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 var _ ports.AuthRepository = (*AuthRepository)(nil)
@@ -16,14 +15,10 @@ var _ ports.AuthRepository = (*AuthRepository)(nil)
 type AuthRepository struct {
 	mx      sync.Mutex
 	storage map[models.UserID]*models.User
-	logger  *slog.Logger
+	logger  logger.Logger
 }
 
-func NewAuthRepository(logger *slog.Logger) *AuthRepository {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
+func NewAuthRepository(logger logger.Logger) *AuthRepository {
 	return &AuthRepository{
 		storage: make(map[models.UserID]*models.User),
 		logger:  logger.With("component", "auth_repository"),
