@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -26,6 +27,7 @@ type Config struct {
 	Server  *ServerConfig
 	Kafka   *KafkaConfig
 	Auth    *AuthConfig
+	DB      *DBConfig
 }
 
 type ServerConfig struct {
@@ -45,6 +47,19 @@ type KafkaConfig struct {
 
 type AuthConfig struct {
 	TokenTTL time.Duration
+}
+
+type DBConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Name     string
+}
+
+func (c *DBConfig) DSN() string {
+	return fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable",
+		c.Host, c.Port, c.User, c.Name, c.Password)
 }
 
 func (s *ServerConfig) GrpcAddr() string {
@@ -80,6 +95,14 @@ func LoadConfig() (*Config, error) {
 	c.Kafka.RetryInterval = getEnvAsDuration("KAFKA_RETRY_INTERVAL", DefaultKafkaRetryInterval)
 
 	c.Auth.TokenTTL = getEnvAsDuration("AUTH_TOKEN_TTL", DefaultTokenTTL)
+
+	c.DB = &DBConfig{
+		Host:     getEnv("POSTGRES_HOST", "localhost"),
+		Port:     getEnvAsInt("POSTGRES_PORT", 5432),
+		User:     getEnv("POSTGRES_USER", "root"),
+		Password: getEnv("POSTGRES_PASSWORD", "root"),
+		Name:     getEnv("POSTGRES_DB", "auth_db"),
+	}
 
 	return c, nil
 }

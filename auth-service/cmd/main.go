@@ -6,9 +6,11 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/in/grpc"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/out/kafka"
-	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/in_memory"
+	"github.com/SamEkb/messenger-app/auth-service/internal/app/repositories/auth/postgres"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	postgreslib "github.com/SamEkb/messenger-app/pkg/platform/postgres"
+	"github.com/jmoiron/sqlx"
 )
 
 func main() {
@@ -23,8 +25,11 @@ func main() {
 	log := logger.NewLogger(config.Debug, config.AppName)
 	log.Info("starting auth service")
 
-	authRepository := in_memory.NewAuthRepository(log)
-	tokenRepository := in_memory.NewTokenRepository(log)
+	dbx := sqlx.MustConnect("postgres", config.DB.DSN())
+	db := &postgreslib.DB{DB: dbx}
+
+	authRepository := postgres.NewAuthRepository(db, log)
+	tokenRepository := postgres.NewTokenRepository(db, log)
 
 	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
 	if err != nil {

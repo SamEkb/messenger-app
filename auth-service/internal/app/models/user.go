@@ -37,6 +37,14 @@ func NewUser(id UserID, username string, email string, password []byte) (*User, 
 	}, nil
 }
 
+func UserIDFromString(id string) (UserID, error) {
+	parsed, err := uuid.Parse(id)
+	if err != nil {
+		return UserID{}, errors.NewInvalidInputError("invalid user ID")
+	}
+	return UserID(parsed), nil
+}
+
 func (u UserID) IsEmpty() bool {
 	return u == UserID(uuid.Nil)
 }

@@ -25,6 +25,37 @@ services:
     networks:
       - messenger-network
 
+  # PostgreSQL
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports: [ "5432:5432" ]
+    networks: [ messenger-network ]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Redis
+  redis:
+    image: redis:7
+    container_name: redis
+    ports: [ "6379:6379" ]
+    networks: [ messenger-network ]
+
+  # MongoDB
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports: [ "27017:27017" ]
+    networks: [ messenger-network ]
+    volumes:
+      - mongodata:/data/db
+
   # Auth Service
   auth-service:
     build:
@@ -37,11 +68,18 @@ services:
     environment:
       - PORT=8001
       - KAFKA_BROKERS=kafka:9092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=auth_db
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - kafka
+      - postgres
+      - redis
     networks:
       - messenger-network
     restart: on-failure
-    depends_on:
-      - kafka
 
   # Users Service
   users-service:
@@ -55,11 +93,18 @@ services:
     environment:
       - PORT=8004
       - KAFKA_BROKERS=kafka:9092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=users_db
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - kafka
+      - postgres
+      - redis
     networks:
       - messenger-network
     restart: on-failure
-    depends_on:
-      - kafka
 
   # Friends Service
   friends-service:
@@ -73,11 +118,18 @@ services:
     environment:
       - PORT=8003
       - USERS_SERVICE_ADDR=users-service:9004
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=friends_db
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - users-service
+      - postgres
+      - redis
     networks:
       - messenger-network
     restart: on-failure
-    depends_on:
-      - users-service
 
   # Chat Service
   chat-service:
@@ -92,13 +144,24 @@ services:
       - PORT=8002
       - USERS_SERVICE_ADDR=users-service:9004
       - FRIENDS_SERVICE_ADDR=friends-service:9003
-    networks:
-      - messenger-network
-    restart: on-failure
+      - MONGO_HOST=mongo
+      - MONGO_USER=root
+      - MONGO_PASSWORD=root
+      - MONGO_DB=chat_db
+      - REDIS_ADDR=redis:6379
     depends_on:
       - users-service
       - friends-service
+      - mongo
+      - redis
+    networks:
+      - messenger-network
+    restart: on-failure
 
 networks:
   messenger-network:
     driver: bridge
+
+volumes:
+  pgdata:
+  mongodata:
