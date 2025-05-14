@@ -9,7 +9,7 @@ import (
 type AuthRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	FindUserByID(ctx context.Context, userID models.UserID) (*models.User, error)
-	FindUserByEmail(ctx context.Context, username string) (*models.User, error)
+	FindUserByEmail(ctx context.Context, email string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 }
 
