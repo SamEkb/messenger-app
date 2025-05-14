@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/users-service/pkg/errors"
 )
 
 var _ ports.UserRepository = (*UserRepository)(nil)

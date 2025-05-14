@@ -1,11 +1,10 @@
 package user
 
 import (
-	"bytes"
 	"context"
-	"log/slog"
 	"testing"
 
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/usecases/user/mocks"
@@ -44,11 +43,6 @@ func TestUseCase_Create(t *testing.T) {
 			want:    testUUID.String(),
 			wantErr: false,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockUserRepository := mocks.NewUserRepository(t)
 				mockUserRepository.EXPECT().
 					Create(ctx, mock.AnythingOfType("*models.User")).
@@ -56,7 +50,7 @@ func TestUseCase_Create(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger,
+					logger:         logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -73,11 +67,6 @@ func TestUseCase_Create(t *testing.T) {
 			want:    "",
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockUserRepository := mocks.NewUserRepository(t)
 				mockUserRepository.EXPECT().
 					Create(ctx, mock.AnythingOfType("*models.User")).
@@ -85,7 +74,7 @@ func TestUseCase_Create(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger,
+					logger:         logger.NewLogger("local", "test"),
 				}
 			},
 		},

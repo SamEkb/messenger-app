@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 )
 
 func (u *UseCase) CreateChat(ctx context.Context, participants []string) (*ports.ChatDto, error) {

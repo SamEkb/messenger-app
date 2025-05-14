@@ -33,6 +33,7 @@ const (
 	CodeTimeout       = "TIMEOUT"
 	CodeToken         = "TOKEN"
 	CodeService       = "SERVICE"
+	CodeForbidden     = "FORBIDDEN"
 )
 
 type AppError struct {
@@ -138,5 +139,13 @@ func NewServiceError(err error, format string, args ...interface{}) *AppError {
 		Err:     err,
 		Message: fmt.Sprintf(format, args...),
 		Code:    CodeService,
+	}
+}
+
+func NewForbiddenError(format string, args ...interface{}) *AppError {
+	return &AppError{
+		Err:     ErrForbidden,
+		Message: fmt.Sprintf(format, args...),
+		Code:    CodeForbidden,
 	}
 }

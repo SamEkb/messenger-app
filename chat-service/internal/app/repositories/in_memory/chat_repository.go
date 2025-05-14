@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 

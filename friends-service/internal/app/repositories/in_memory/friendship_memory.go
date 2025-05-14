@@ -7,7 +7,7 @@ import (
 
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/friends-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 

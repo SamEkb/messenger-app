@@ -1,11 +1,10 @@
 package user
 
 import (
-	"bytes"
 	"context"
-	"log/slog"
 	"testing"
 
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/usecases/user/mocks"
@@ -44,11 +43,6 @@ func TestUseCase_Get(t *testing.T) {
 			},
 			wantErr: false,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				expectedUser, err := models.NewUser(testUserID, "test@test.ru", "testuser", "", "")
 				assert.NoError(t, err)
 
@@ -60,7 +54,7 @@ func TestUseCase_Get(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger,
+					logger:         logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -72,11 +66,6 @@ func TestUseCase_Get(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockUserRepository := mocks.NewUserRepository(t)
 				mockUserRepository.EXPECT().
 					Get(ctx, testUserID).
@@ -85,7 +74,7 @@ func TestUseCase_Get(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger,
+					logger:         logger.NewLogger("local", "test"),
 				}
 			},
 		},

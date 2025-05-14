@@ -6,8 +6,8 @@ import (
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/Shopify/sarama"
 )

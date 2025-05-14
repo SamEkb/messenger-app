@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/SamEkb/messenger-app/pkg/api v0.0.0-00010101000000-000000000000
+	github.com/SamEkb/messenger-app/pkg/platform/errors v0.0.0-00010101000000-000000000000
 	github.com/SamEkb/messenger-app/pkg/platform/logger v0.0.0-00010101000000-000000000000
 	github.com/Shopify/sarama v1.38.1
 	github.com/bufbuild/protovalidate-go v0.10.0
@@ -54,3 +55,5 @@ require (
 replace github.com/SamEkb/messenger-app/pkg/api => ../pkg/api
 
 replace github.com/SamEkb/messenger-app/pkg/platform/logger => ../pkg/platform/logger
+
+replace github.com/SamEkb/messenger-app/pkg/platform/errors => ../pkg/platform/errors

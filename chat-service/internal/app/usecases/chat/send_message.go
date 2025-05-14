@@ -5,7 +5,7 @@ import (
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 )
 
 func (u *UseCase) SendMessage(ctx context.Context, chatID string, authorID, content string) (*ports.MessageDto, error) {

@@ -5,9 +5,9 @@ import (
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

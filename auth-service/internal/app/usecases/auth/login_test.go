@@ -1,17 +1,16 @@
 package auth
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth/mocks"
-	customerrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	customerrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,10 +49,7 @@ func TestUseCase_Login(t *testing.T) {
 			want:    models.Token("very-strong-token"),
 			wantErr: false,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
+				logger := logger.NewLogger("local", "test")
 
 				mockUser, err := models.NewUser(userID, "testuser", email, hashedPassword)
 				assert.NoError(t, err)
@@ -97,10 +93,7 @@ func TestUseCase_Login(t *testing.T) {
 			want:    "",
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
+				logger := logger.NewLogger("local", "test")
 
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
@@ -130,10 +123,7 @@ func TestUseCase_Login(t *testing.T) {
 			wantErr:     true,
 			expectedErr: customerrors.NewUnauthorizedError("invalid credentials"),
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
+				logger := logger.NewLogger("local", "test")
 
 				mockUser, err := models.NewUser(userID, "testuser", email, hashedPassword)
 				assert.NoError(t, err)
@@ -165,10 +155,7 @@ func TestUseCase_Login(t *testing.T) {
 			wantErr:     true,
 			expectedErr: customerrors.NewInternalError(nil, "failed to save token"),
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
+				logger := logger.NewLogger("local", "test")
 
 				mockUser, err := models.NewUser(userID, "testuser", email, hashedPassword)
 				assert.NoError(t, err)

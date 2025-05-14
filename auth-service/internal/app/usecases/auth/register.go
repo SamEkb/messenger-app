@@ -5,8 +5,8 @@ import (
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"

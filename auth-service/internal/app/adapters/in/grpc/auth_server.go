@@ -12,8 +12,8 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc" // Импорт для интерцептора ошибок
-	apperrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
+	apperrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"

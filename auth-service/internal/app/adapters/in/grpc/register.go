@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 )
 
 func (s *Server) Register(ctx context.Context, req *auth.RegisterRequest) (*auth.RegisterResponse, error) {

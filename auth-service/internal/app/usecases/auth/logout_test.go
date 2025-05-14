@@ -1,15 +1,14 @@
 package auth
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log/slog"
 	"testing"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth/mocks"
-	customerrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	customerrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,11 +33,6 @@ func TestUseCase_Logout(t *testing.T) {
 			},
 			wantErr: false,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockTokenRepo := mocks.NewTokenRepository(t)
 				mockTokenRepo.EXPECT().ValidateToken(ctx, "very-strong-token").
 					Return(true, nil).
@@ -51,7 +45,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -62,10 +56,6 @@ func TestUseCase_Logout(t *testing.T) {
 			},
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
 				mockTokenRepo := mocks.NewTokenRepository(t)
 				mockTokenRepo.EXPECT().ValidateToken(ctx, "very-strong-token").
 					Return(false, errors.New("database error")).
@@ -73,7 +63,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -85,10 +75,6 @@ func TestUseCase_Logout(t *testing.T) {
 			wantErr:     true,
 			expectedErr: customerrors.NewTokenError(nil, "invalid token"),
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
 				mockTokenRepo := mocks.NewTokenRepository(t)
 				mockTokenRepo.EXPECT().ValidateToken(ctx, "invalid-token").
 					Return(false, nil).
@@ -96,7 +82,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -107,10 +93,6 @@ func TestUseCase_Logout(t *testing.T) {
 			},
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
 				mockTokenRepo := mocks.NewTokenRepository(t)
 				mockTokenRepo.EXPECT().ValidateToken(ctx, "very-strong-token").
 					Return(true, nil).
@@ -122,7 +104,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 				}
 			},
 		},
