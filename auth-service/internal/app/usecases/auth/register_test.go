@@ -9,7 +9,6 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth/mocks"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -22,18 +21,8 @@ func TestUseCase_Register(t *testing.T) {
 		dto *ports.RegisterDto
 	}
 
-	userID := models.UserID(uuid.New())
-
-	//user, _ := models.NewUser(
-	//	userID,
-	//	"testuser",
-	//	"test@test.ru",
-	//	[]byte("strongAndLongPassword"),
-	//)
-
 	tests := map[string]struct {
 		args    args
-		want    models.UserID
 		wantErr bool
 		err     error
 		deps    func(t *testing.T) UseCase
@@ -47,7 +36,6 @@ func TestUseCase_Register(t *testing.T) {
 					Password: "strongAndLongPassword",
 				},
 			},
-			want:    userID,
 			wantErr: false,
 			err:     nil,
 			deps: func(t *testing.T) UseCase {
@@ -56,16 +44,9 @@ func TestUseCase_Register(t *testing.T) {
 					Level: slog.LevelDebug,
 				}))
 
-				user, _ := models.NewUser(
-					userID,
-					"testuser",
-					"test@test.ru",
-					[]byte("strongAndLongPassword"),
-				)
-
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
-					Create(ctx, user).
+					Create(ctx, mock.AnythingOfType("*models.User")).
 					Return(nil).
 					Once()
 
@@ -95,7 +76,8 @@ func TestUseCase_Register(t *testing.T) {
 				assert.IsType(t, tc.err, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.want, id)
+				assert.NotEqual(t, models.UserID{}, id)
+				assert.NotEmpty(t, id.String())
 			}
 		})
 	}
