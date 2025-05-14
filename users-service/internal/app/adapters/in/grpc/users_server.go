@@ -13,6 +13,7 @@ import (
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
+	middlewaregrpc "github.com/SamEkb/messenger-app/users-service/internal/middleware/grpc"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -65,6 +66,7 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),
 		)
 		users.RegisterUsersServiceServer(grpcServer, s)

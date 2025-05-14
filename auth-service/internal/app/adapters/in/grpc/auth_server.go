@@ -11,7 +11,7 @@ import (
 	"buf.build/go/protovalidate"
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc" // Импорт для интерцептора ошибок
+	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
 	apperrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"

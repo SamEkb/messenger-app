@@ -6,6 +6,7 @@ require (
 	github.com/SamEkb/messenger-app/pkg/api v0.0.0-00010101000000-000000000000
 	github.com/SamEkb/messenger-app/pkg/platform/errors v0.0.0-00010101000000-000000000000
 	github.com/SamEkb/messenger-app/pkg/platform/logger v0.0.0-00010101000000-000000000000
+	github.com/SamEkb/messenger-app/pkg/platform/postgres v0.0.0-00010101000000-000000000000
 	github.com/Shopify/sarama v1.38.1
 	github.com/bufbuild/protovalidate-go v0.10.0
 	github.com/google/uuid v1.6.0
@@ -34,6 +35,7 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.3 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
+	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/klauspost/compress v1.15.14 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -57,3 +59,5 @@ replace github.com/SamEkb/messenger-app/pkg/api => ../pkg/api
 replace github.com/SamEkb/messenger-app/pkg/platform/logger => ../pkg/platform/logger
 
 replace github.com/SamEkb/messenger-app/pkg/platform/errors => ../pkg/platform/errors
+
+replace github.com/SamEkb/messenger-app/pkg/platform/postgres => ../pkg/platform/postgres

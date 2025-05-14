@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	postgreslib "github.com/SamEkb/messenger-app/pkg/platform/postgres"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/grpc"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/kafka"
-	"github.com/SamEkb/messenger-app/users-service/internal/app/repositories/user/in_memory"
+	"github.com/SamEkb/messenger-app/users-service/internal/app/repositories/user/postgres"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/usecases/user"
 )
 
@@ -23,8 +24,14 @@ func main() {
 	log := logger.NewLogger(config.Debug, config.AppName)
 	log.Info("starting users service")
 
-	usersRepo := in_memory.NewUserRepository(log)
-	userUseCase := user.NewUseCase(usersRepo, log)
+	db, err := postgreslib.NewDB(config.DB.DSN())
+	if err != nil {
+		log.Fatal("failed to create DB connection", "error", err)
+	}
+	txManager := postgreslib.NewTxManager(db)
+
+	usersRepo := postgres.NewUserRepository(txManager, log)
+	userUseCase := user.NewUseCase(usersRepo, txManager, log)
 
 	kafkaServer := kafka.NewUsersServiceServer(userUseCase, log)
 
