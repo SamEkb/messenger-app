@@ -34,8 +34,14 @@ func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.
 		return models.UserID{}, err
 	}
 
-	if err = a.authRepo.Create(ctx, user); err != nil {
-		a.logger.Error("failed to save user", "error", err)
+	err = a.txManager.RunTx(ctx, func(txCtx context.Context) error {
+		if err := a.authRepo.Create(txCtx, user); err != nil {
+			a.logger.Error("failed to save user", "error", err)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return models.UserID{}, err
 	}
 

@@ -13,21 +13,22 @@ import (
 var _ ports.AuthRepository = (*AuthRepository)(nil)
 
 type AuthRepository struct {
-	q      postgres.QueryEngine
-	logger logger.Logger
+	txManager *postgres.TxManager
+	logger    logger.Logger
 }
 
-func NewAuthRepository(q postgres.QueryEngine, logger logger.Logger) *AuthRepository {
+func NewAuthRepository(txManager *postgres.TxManager, logger logger.Logger) *AuthRepository {
 	return &AuthRepository{
-		q:      q,
-		logger: logger.With("component", "auth_repository"),
+		txManager: txManager,
+		logger:    logger.With("component", "auth_repository"),
 	}
 }
 
 func (r *AuthRepository) Create(ctx context.Context, user *models.User) error {
 	r.logger.Debug("attempting to create new user", "user_id", user.ID(), "email", user.Email())
 
-	_, err := r.q.ExecContext(ctx, `
+	q := r.txManager.GetQueryEngine(ctx)
+	_, err := q.ExecContext(ctx, `
 		INSERT INTO users (id, username, email, password)
 		VALUES ($1, $2, $3, $4)
 	`, user.ID(), user.Username(), user.Email(), user.Password())
@@ -43,41 +44,39 @@ func (r *AuthRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *AuthRepository) FindUserByID(ctx context.Context, userID models.UserID) (*models.User, error) {
 	r.logger.Debug("looking for user by ID", "user_id", userID)
+	q := r.txManager.GetQueryEngine(ctx)
 	var user struct {
 		ID       string `db:"id"`
 		Username string `db:"username"`
 		Email    string `db:"email"`
 		Password string `db:"password"`
 	}
-	err := r.q.GetContext(ctx, &user, `
+	err := q.GetContext(ctx, &user, `
 		SELECT id, username, email, password FROM users WHERE id = $1
 	`, userID)
 	if err != nil {
 		r.logger.Warn("user not found", "user_id", userID)
 		return nil, errors.NewNotFoundError("user with ID %s not found", userID.String())
 	}
-
 	uid, err := models.UserIDFromString(user.ID)
 	if err != nil {
 		r.logger.Warn("failed to parse UUID", "UUID", userID)
 		return nil, err
 	}
-
 	r.logger.Debug("user found", "user_id", userID, "email", user.Email)
-
 	return models.NewUser(uid, user.Username, user.Email, []byte(user.Password))
 }
 
 func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	r.logger.Debug("looking for user by email", "email", email)
-
+	q := r.txManager.GetQueryEngine(ctx)
 	var user struct {
 		ID       string `db:"id"`
 		Username string `db:"username"`
 		Email    string `db:"email"`
 		Password string `db:"password"`
 	}
-	err := r.q.GetContext(ctx, &user, `
+	err := q.GetContext(ctx, &user, `
 		SELECT id, username, email, password FROM users WHERE email = $1
 	`, email)
 	if err != nil {
@@ -96,14 +95,13 @@ func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (*mo
 
 func (r *AuthRepository) Update(ctx context.Context, user *models.User) error {
 	r.logger.Debug("attempting to update user", "user_id", user.ID())
-
-	_, err := r.q.ExecContext(ctx, `
+	q := r.txManager.GetQueryEngine(ctx)
+	_, err := q.ExecContext(ctx, `
 		UPDATE users SET username = $1, email = $2, password = $3 WHERE id = $4
 	`, user.Username(), user.Email(), user.Password(), user.ID())
 	if err != nil {
 		r.logger.Warn("user not found for update", "user_id", user.ID())
 		return errors.NewNotFoundError("user with ID %s not found", user.ID().String())
 	}
-
 	return nil
 }

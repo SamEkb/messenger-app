@@ -5,9 +5,11 @@ import (
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	"github.com/SamEkb/messenger-app/pkg/platform/postgres"
 )
 
 type UseCase struct {
+	txManager          *postgres.TxManager
 	authRepo           ports.AuthRepository
 	tokenRepo          ports.TokenRepository
 	userEventPublisher ports.UserEventsKafkaProducer
@@ -16,6 +18,7 @@ type UseCase struct {
 }
 
 func NewAuthUseCase(
+	txManager *postgres.TxManager,
 	authRepo ports.AuthRepository,
 	tokenRepo ports.TokenRepository,
 	userEventPublisher ports.UserEventsKafkaProducer,
@@ -23,6 +26,7 @@ func NewAuthUseCase(
 	logger logger.Logger,
 ) *UseCase {
 	return &UseCase{
+		txManager:          txManager,
 		authRepo:           authRepo,
 		tokenRepo:          tokenRepo,
 		userEventPublisher: userEventPublisher,

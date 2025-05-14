@@ -10,7 +10,6 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	postgreslib "github.com/SamEkb/messenger-app/pkg/platform/postgres"
-	"github.com/jmoiron/sqlx"
 )
 
 func main() {
@@ -25,11 +24,13 @@ func main() {
 	log := logger.NewLogger(config.Debug, config.AppName)
 	log.Info("starting auth service")
 
-	dbx := sqlx.MustConnect("postgres", config.DB.DSN())
-	db := &postgreslib.DB{DB: dbx}
-
-	authRepository := postgres.NewAuthRepository(db, log)
-	tokenRepository := postgres.NewTokenRepository(db, log)
+	db, err := postgreslib.NewDB(config.DB.DSN())
+	if err != nil {
+		log.Fatal("failed to create DB connection", "error", err)
+	}
+	txManager := postgreslib.NewTxManager(db)
+	authRepository := postgres.NewAuthRepository(txManager, log)
+	tokenRepository := postgres.NewTokenRepository(txManager, log)
 
 	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
 	if err != nil {
@@ -38,6 +39,7 @@ func main() {
 	defer userEventPublisher.Close()
 
 	usecase := auth.NewAuthUseCase(
+		txManager,
 		authRepository,
 		tokenRepository,
 		userEventPublisher,

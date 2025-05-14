@@ -71,7 +71,7 @@ func (s *ServerConfig) HttpAddr() string {
 }
 
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Println("Info: .env file not found or couldn't be loaded; using environment variables")
 	}
 
