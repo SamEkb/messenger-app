@@ -48,6 +48,7 @@ func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.
 
 	if err = a.userEventPublisher.ProduceUserRegisteredEvent(ctx, event); err != nil {
 		a.logger.Warn("failed to publish user registration event", "error", err, "user_id", user.ID())
+		return models.UserID{}, err
 	}
 
 	a.logger.Info("user registered successfully", "user_id", user.ID(), "username", user.Username(), "email", user.Email())

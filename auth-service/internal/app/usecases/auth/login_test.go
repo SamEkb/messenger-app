@@ -124,7 +124,7 @@ func TestUseCase_Login(t *testing.T) {
 				ctx: ctx,
 				dto: &ports.LoginDto{
 					Email:    email,
-					Password: "<PASSWORD>",
+					Password: "wrongPassword",
 				},
 			},
 			want:    "",
