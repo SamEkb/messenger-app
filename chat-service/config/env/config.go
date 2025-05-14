@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -18,6 +19,7 @@ type Config struct {
 	Debug   string
 	Server  *ServerConfig
 	Clients *ClientsConfig
+	MongoDB *MongoDBConfig
 }
 
 type ServerConfig struct {
@@ -30,6 +32,15 @@ type ServerConfig struct {
 type ClientsConfig struct {
 	Users   *ServiceClientConfig
 	Friends *ServiceClientConfig
+}
+
+type MongoDBConfig struct {
+	URI      string
+	Database string
+}
+
+func (m *MongoDBConfig) ConnectionString() string {
+	return fmt.Sprintf("%s/%s", m.URI, m.Database)
 }
 
 type ServiceClientConfig struct {
@@ -62,6 +73,7 @@ func LoadConfig() (*Config, error) {
 			Users:   &ServiceClientConfig{},
 			Friends: &ServiceClientConfig{},
 		},
+		MongoDB: &MongoDBConfig{},
 	}
 
 	c.Server.GRPCHost = getEnv("GRPC_HOST", "0.0.0.0")
@@ -74,6 +86,9 @@ func LoadConfig() (*Config, error) {
 
 	c.Clients.Friends.Host = getEnv("FRIENDS_SERVICE_HOST", "localhost")
 	c.Clients.Friends.Port = getEnvAsInt("FRIENDS_SERVICE_PORT", 9003)
+
+	c.MongoDB.URI = getEnv("MONGODB_URI", "mongodb://localhost:27017")
+	c.MongoDB.Database = getEnv("MONGODB_DATABASE", "chat_db")
 
 	return c, nil
 }

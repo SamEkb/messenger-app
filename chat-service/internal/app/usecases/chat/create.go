@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (u *UseCase) CreateChat(ctx context.Context, participants []string) (*ports.ChatDto, error) {
@@ -49,10 +51,19 @@ func (u *UseCase) CreateChat(ctx context.Context, participants []string) (*ports
 		return nil, errors.NewForbiddenError("some participants are not friends")
 	}
 
-	chat, err := u.chatRepository.Create(ctx, participants)
+	var chat *models.Chat
+	err = u.txManager.RunTx(ctx, func(sessionCtx mongo.SessionContext) error {
+		var err error
+		chat, err = u.chatRepository.Create(sessionCtx, participants)
+		if err != nil {
+			u.logger.Error("failed to create chat", "error", err)
+			return fmt.Errorf("failed to create chat: %w", err)
+		}
+		return nil
+	})
+
 	if err != nil {
-		u.logger.Error("failed to create chat", "error", err)
-		return nil, fmt.Errorf("failed to create chat: %w", err)
+		return nil, err
 	}
 
 	return ports.NewChatDto(

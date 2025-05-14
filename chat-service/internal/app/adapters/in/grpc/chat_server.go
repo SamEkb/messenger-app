@@ -9,8 +9,9 @@ import (
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	middlewaregrpc "github.com/SamEkb/messenger-app/chat-service/internal/middleware/grpc"
 	chat "github.com/SamEkb/messenger-app/pkg/api/chat_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
@@ -60,6 +61,7 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),
 		)
 		chat.RegisterChatServiceServer(grpcServer, s)

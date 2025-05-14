@@ -6,6 +6,7 @@ import (
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (u *UseCase) SendMessage(ctx context.Context, chatID string, authorID, content string) (*ports.MessageDto, error) {
@@ -39,9 +40,18 @@ func (u *UseCase) SendMessage(ctx context.Context, chatID string, authorID, cont
 		return nil, err
 	}
 
-	msg, err := u.chatRepository.SendMessage(ctx, id, authorID, content)
+	var msg *models.Message
+	err = u.txManager.RunTx(ctx, func(sessionCtx mongo.SessionContext) error {
+		var err error
+		msg, err = u.chatRepository.SendMessage(sessionCtx, id, authorID, content)
+		if err != nil {
+			u.logger.Error("failed to send message", "chatID", chatID, "authorID", authorID, "error", err)
+			return err
+		}
+		return nil
+	})
+
 	if err != nil {
-		u.logger.Error("failed to send message", "chatID", chatID, "authorID", authorID, "error", err)
 		return nil, err
 	}
 
