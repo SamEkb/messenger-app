@@ -19,7 +19,4 @@ migrate-down:
 migrate-status:
 	$(GOOSE) -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" status
 
-migrate:
-	$(GOOSE) -dir $(LOCAL_BIN)./migrations postgres "$GOOSE_DBSTRING" up
-
-.PHONY: build migrate-up migrate-down migrate-status
+.PHONY: build migrate-up migrate-down migrate-status 

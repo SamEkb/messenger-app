@@ -43,6 +43,17 @@ func NewFriendship(requestorID, recipientID string) (*Friendship, error) {
 	}, nil
 }
 
+func NewFriendshipFromDB(id uuid.UUID, requestorID, recipientID string, status FriendshipStatus, createdAt, updatedAt time.Time) *Friendship {
+	return &Friendship{
+		id:          id,
+		requestorID: requestorID,
+		recipientID: recipientID,
+		status:      status,
+		createdAt:   createdAt,
+		updatedAt:   updatedAt,
+	}
+}
+
 func (f *Friendship) Accept() {
 	f.status = FriendshipStatusAccepted
 	f.updatedAt = time.Now()
