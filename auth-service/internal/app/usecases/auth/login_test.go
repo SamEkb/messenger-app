@@ -154,7 +154,7 @@ func TestUseCase_Login(t *testing.T) {
 				}
 			},
 		},
-		"failed to create auth token": {
+		"failed to save token": {
 			args: args{
 				ctx: ctx,
 				dto: &ports.LoginDto{
@@ -164,7 +164,7 @@ func TestUseCase_Login(t *testing.T) {
 			},
 			want:    "",
 			wantErr: true,
-			err:     errors.NewInternalError(nil, "failed to create auth token"),
+			err:     errors.NewInternalError(nil, "failed to save token"),
 			deps: func(t *testing.T) UseCase {
 				var buf bytes.Buffer
 				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
@@ -180,15 +180,11 @@ func TestUseCase_Login(t *testing.T) {
 					Return(mockUser, nil).
 					Once()
 
-				expectedToken := models.Token("very-strong-token")
-				_, err = models.NewAuthToken(
-					expectedToken,
-					models.UserID{},
-					time.Now().Add(ttlDuration),
-				)
-				assert.Error(t, err)
-
 				mockTokenRepo := mocks.NewTokenRepository(t)
+				mockTokenRepo.EXPECT().
+					Create(ctx, mock.AnythingOfType("*models.AuthToken")).
+					Return(nil, errors.NewInternalError(nil, "database error")).
+					Once()
 
 				return UseCase{
 					authRepo:  mockAuthRepo,
