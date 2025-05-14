@@ -15,6 +15,7 @@ func (uc *UseCase) Get(ctx context.Context, id string) (*ports.UserDto, error) {
 		uc.logger.Error("Failed to parse user ID", "error", err, "user_id", id)
 		return nil, err
 	}
+
 	user, err := uc.userRepository.Get(ctx, userID)
 	if err != nil {
 		uc.logger.Error("Failed to get user", "error", err, "user_id", id)

@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/SamEkb/messenger-app/friends-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 )
 
@@ -41,6 +41,17 @@ func NewFriendship(requestorID, recipientID string) (*Friendship, error) {
 		createdAt:   now,
 		updatedAt:   now,
 	}, nil
+}
+
+func NewFriendshipFromDB(id uuid.UUID, requestorID, recipientID string, status FriendshipStatus, createdAt, updatedAt time.Time) *Friendship {
+	return &Friendship{
+		id:          id,
+		requestorID: requestorID,
+		recipientID: recipientID,
+		status:      status,
+		createdAt:   createdAt,
+		updatedAt:   updatedAt,
+	}
 }
 
 func (f *Friendship) Accept() {

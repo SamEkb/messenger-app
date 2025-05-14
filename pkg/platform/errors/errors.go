@@ -26,7 +26,6 @@ var (
 const (
 	CodeNotFound      = "NOT_FOUND"
 	CodeAlreadyExists = "ALREADY_EXISTS"
-	CodeForbidden     = "FORBIDDEN"
 	CodeUnauthorized  = "UNAUTHORIZED"
 	CodeInvalidInput  = "INVALID_INPUT"
 	CodeValidation    = "VALIDATION"
@@ -34,6 +33,7 @@ const (
 	CodeTimeout       = "TIMEOUT"
 	CodeToken         = "TOKEN"
 	CodeService       = "SERVICE"
+	CodeForbidden     = "FORBIDDEN"
 )
 
 type AppError struct {
@@ -94,14 +94,6 @@ func NewUnauthorizedError(format string, args ...interface{}) *AppError {
 	}
 }
 
-func NewForbiddenError(format string, args ...interface{}) *AppError {
-	return &AppError{
-		Err:     ErrForbidden,
-		Message: fmt.Sprintf(format, args...),
-		Code:    CodeForbidden,
-	}
-}
-
 func NewInvalidInputError(format string, args ...interface{}) *AppError {
 	return &AppError{
 		Err:     ErrInvalidInput,
@@ -147,5 +139,13 @@ func NewServiceError(err error, format string, args ...interface{}) *AppError {
 		Err:     err,
 		Message: fmt.Sprintf(format, args...),
 		Code:    CodeService,
+	}
+}
+
+func NewForbiddenError(format string, args ...interface{}) *AppError {
+	return &AppError{
+		Err:     ErrForbidden,
+		Message: fmt.Sprintf(format, args...),
+		Code:    CodeForbidden,
 	}
 }

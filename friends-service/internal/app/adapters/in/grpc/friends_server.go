@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -13,6 +12,7 @@ import (
 	"github.com/SamEkb/messenger-app/friends-service/config/env"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/ports"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -27,10 +27,10 @@ type FriendshipServiceServer struct {
 	friendshipUseCase ports.FriendshipUseCase
 	validator         protovalidate.Validator
 	cfg               *env.ServerConfig
-	logger            *slog.Logger
+	logger            logger.Logger
 }
 
-func NewServer(cfg *env.ServerConfig, friendshipUseCase ports.FriendshipUseCase, logger *slog.Logger) (*FriendshipServiceServer, error) {
+func NewServer(cfg *env.ServerConfig, friendshipUseCase ports.FriendshipUseCase, logger logger.Logger) (*FriendshipServiceServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize validator: %w", err)

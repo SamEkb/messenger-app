@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 )
 

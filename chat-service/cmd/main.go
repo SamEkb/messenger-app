@@ -6,9 +6,10 @@ import (
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	grpcserver "github.com/SamEkb/messenger-app/chat-service/internal/app/adapters/in/grpc"
 	grpcclient "github.com/SamEkb/messenger-app/chat-service/internal/app/adapters/out/grpc"
-	"github.com/SamEkb/messenger-app/chat-service/internal/app/repositories/in_memory"
+	"github.com/SamEkb/messenger-app/chat-service/internal/app/repositories/mongodb"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/usecases/chat"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/logger"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mongolib "github.com/SamEkb/messenger-app/pkg/platform/mongodb"
 )
 
 func main() {
@@ -23,31 +24,35 @@ func main() {
 	log := logger.NewLogger(config.Debug, config.AppName)
 	log.Info("starting chat service")
 
-	chatRepository := in_memory.NewChatRepository(log)
+	mongoClient, err := mongolib.NewMongoClient(ctx, config.MongoDB.URI)
+	if err != nil {
+		log.Fatal("failed to connect to MongoDB", "error", err)
+	}
+	defer mongoClient.Disconnect(ctx)
+
+	chatRepository := mongodb.NewChatRepository(mongoClient, config.MongoDB.Database, log)
+
+	txManager := mongolib.NewTxManager(mongoClient)
 
 	client := grpcclient.NewClient(config.Clients, log)
 
 	usersClient, err := client.NewUsersServiceClient(ctx)
 	if err != nil {
-		log.Error("failed to create Users Service client", "error", err)
-		panic(err)
+		log.Fatal("failed to create Users Service client", "error", err)
 	}
 	friendsClient, err := client.NewFriendsServiceClient(ctx)
 	if err != nil {
-		log.Error("failed to create Friends Service client", "error", err)
-		panic(err)
+		log.Fatal("failed to create Friends Service client", "error", err)
 	}
 
-	chatUseCase := chat.NewChatUseCase(chatRepository, usersClient, friendsClient, log)
+	chatUseCase := chat.NewChatUseCase(chatRepository, usersClient, friendsClient, txManager, log)
 
 	server, err := grpcserver.NewChatServer(chatUseCase, config.Server, log)
 	if err != nil {
-		log.Error("failed to create grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to create grpc server", "error", err)
 	}
 
 	if err = server.RunServers(ctx); err != nil {
-		log.Error("failed to run grpc server", "error", err)
-		panic(err)
+		log.Fatal("failed to run grpc server", "error", err)
 	}
 }

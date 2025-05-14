@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -24,6 +25,7 @@ type Config struct {
 	Debug   string
 	Server  *ServerConfig
 	Kafka   *KafkaConfig
+	DB      *DBConfig
 }
 
 type ServerConfig struct {
@@ -41,6 +43,19 @@ type KafkaConfig struct {
 	RetryInterval time.Duration
 }
 
+type DBConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Name     string
+}
+
+func (db *DBConfig) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		db.User, db.Password, db.Host, db.Port, db.Name)
+}
+
 func (s *ServerConfig) GrpcAddr() string {
 	return s.GRPCHost + ":" + strconv.Itoa(s.GRPCPort)
 }
@@ -50,7 +65,7 @@ func (s *ServerConfig) HttpAddr() string {
 }
 
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Println("Info: .env file not found or couldn't be loaded; using environment variables")
 	}
 
@@ -59,6 +74,7 @@ func LoadConfig() (*Config, error) {
 		Debug:   getEnv("DEBUG", "dev"),
 		Server:  &ServerConfig{},
 		Kafka:   &KafkaConfig{},
+		DB:      &DBConfig{},
 	}
 
 	c.Server.GRPCHost = getEnv("GRPC_HOST", "0.0.0.0")
@@ -71,6 +87,14 @@ func LoadConfig() (*Config, error) {
 	c.Kafka.ConsumerGroup = getEnv("KAFKA_CONSUMER_GROUP", "users-service-group")
 	c.Kafka.MaxRetry = getEnvAsInt("KAFKA_MAX_RETRY", DefaultKafkaMaxRetry)
 	c.Kafka.RetryInterval = getEnvAsDuration("KAFKA_RETRY_INTERVAL", DefaultKafkaRetryInterval)
+
+	c.DB = &DBConfig{
+		Host:     getEnv("POSTGRES_HOST", "localhost"),
+		Port:     getEnvAsInt("POSTGRES_PORT", 5432),
+		User:     getEnv("POSTGRES_USER", "root"),
+		Password: getEnv("POSTGRES_PASSWORD", "root"),
+		Name:     getEnv("POSTGRES_DB", "users_db"),
+	}
 
 	return c, nil
 }

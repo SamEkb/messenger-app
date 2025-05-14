@@ -3,15 +3,16 @@ package grpc
 import (
 	"context"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	middlewaregrpc "github.com/SamEkb/messenger-app/chat-service/internal/middleware/grpc"
 	chat "github.com/SamEkb/messenger-app/pkg/api/chat_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -24,10 +25,10 @@ type ChatServer struct {
 	validator protovalidate.Validator
 	useCase   ports.ChatUseCase
 	cfg       *env.ServerConfig
-	logger    *slog.Logger
+	logger    logger.Logger
 }
 
-func NewChatServer(useCase ports.ChatUseCase, cfg *env.ServerConfig, logger *slog.Logger) (*ChatServer, error) {
+func NewChatServer(useCase ports.ChatUseCase, cfg *env.ServerConfig, logger logger.Logger) (*ChatServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, errors.NewInternalError(err, "failed to initialize validator")
@@ -60,6 +61,7 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),
 		)
 		chat.RegisterChatServiceServer(grpcServer, s)

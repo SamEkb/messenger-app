@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"google.golang.org/grpc"
 	grpcStatus "google.golang.org/grpc/status"
 )
