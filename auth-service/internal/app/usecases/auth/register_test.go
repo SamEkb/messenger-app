@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth/mocks"
 	"github.com/stretchr/testify/assert"
@@ -135,11 +134,10 @@ func TestUseCase_Register(t *testing.T) {
 
 			if tc.wantErr {
 				assert.Error(t, err)
-				assert.Equal(t, models.UserID{}, id)
+				assert.Empty(t, id)
 			} else {
 				assert.NoError(t, err)
-				assert.NotEqual(t, models.UserID{}, id)
-				assert.NotEmpty(t, id.String())
+				assert.NotEmpty(t, id)
 			}
 		})
 	}
