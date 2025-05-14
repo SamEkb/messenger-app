@@ -139,6 +139,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 			if tc.wantErr {
 				assert.Error(t, err)
+				assert.IsType(t, tc.err, err)
 			} else {
 				assert.NoError(t, err)
 			}
