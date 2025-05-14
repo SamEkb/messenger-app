@@ -20,19 +20,6 @@ const (
 	DefaultKafkaMaxRetry      = 3
 )
 
-type DBConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Name     string
-}
-
-func (db *DBConfig) DSN() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		db.User, db.Password, db.Host, db.Port, db.Name)
-}
-
 type Config struct {
 	AppName string
 	Debug   string
@@ -56,6 +43,19 @@ type KafkaConfig struct {
 	RetryInterval time.Duration
 }
 
+type DBConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Name     string
+}
+
+func (db *DBConfig) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		db.User, db.Password, db.Host, db.Port, db.Name)
+}
+
 func (s *ServerConfig) GrpcAddr() string {
 	return s.GRPCHost + ":" + strconv.Itoa(s.GRPCPort)
 }
@@ -65,7 +65,7 @@ func (s *ServerConfig) HttpAddr() string {
 }
 
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Println("Info: .env file not found or couldn't be loaded; using environment variables")
 	}
 
