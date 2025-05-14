@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log/slog"
 	"testing"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth/mocks"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -37,11 +36,6 @@ func TestUseCase_Register(t *testing.T) {
 			},
 			wantErr: false,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
 					Create(ctx, mock.AnythingOfType("*models.User")).
@@ -57,7 +51,7 @@ func TestUseCase_Register(t *testing.T) {
 				return UseCase{
 					authRepo:           mockAuthRepo,
 					userEventPublisher: mockKafkaProducer,
-					logger:             logger,
+					logger:             logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -72,11 +66,6 @@ func TestUseCase_Register(t *testing.T) {
 			},
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
 					Create(ctx, mock.AnythingOfType("*models.User")).
@@ -85,7 +74,7 @@ func TestUseCase_Register(t *testing.T) {
 
 				return UseCase{
 					authRepo: mockAuthRepo,
-					logger:   logger,
+					logger:   logger.NewLogger("local", "test"),
 				}
 			},
 		},
@@ -100,11 +89,6 @@ func TestUseCase_Register(t *testing.T) {
 			},
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				var buf bytes.Buffer
-				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
-					Level: slog.LevelDebug,
-				}))
-
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
 					Create(ctx, mock.AnythingOfType("*models.User")).
@@ -120,7 +104,7 @@ func TestUseCase_Register(t *testing.T) {
 				return UseCase{
 					authRepo:           mockAuthRepo,
 					userEventPublisher: mockKafkaProducer,
-					logger:             logger,
+					logger:             logger.NewLogger("local", "test"),
 				}
 			},
 		},

@@ -49,8 +49,6 @@ func TestUseCase_Login(t *testing.T) {
 			want:    models.Token("very-strong-token"),
 			wantErr: false,
 			deps: func(t *testing.T) UseCase {
-				logger := logger.NewLogger("local", "test")
-
 				mockUser, err := models.NewUser(userID, "testuser", email, hashedPassword)
 				assert.NoError(t, err)
 
@@ -77,7 +75,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 					tokenTTL:  ttlDuration,
 				}
 			},
@@ -93,8 +91,6 @@ func TestUseCase_Login(t *testing.T) {
 			want:    "",
 			wantErr: true,
 			deps: func(t *testing.T) UseCase {
-				logger := logger.NewLogger("local", "test")
-
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
 					FindUserByEmail(ctx, "test@test.ru").
@@ -106,7 +102,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 					tokenTTL:  ttlDuration,
 				}
 			},
@@ -123,8 +119,6 @@ func TestUseCase_Login(t *testing.T) {
 			wantErr:     true,
 			expectedErr: customerrors.NewUnauthorizedError("invalid credentials"),
 			deps: func(t *testing.T) UseCase {
-				logger := logger.NewLogger("local", "test")
-
 				mockUser, err := models.NewUser(userID, "testuser", email, hashedPassword)
 				assert.NoError(t, err)
 
@@ -138,7 +132,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 					tokenTTL:  ttlDuration,
 				}
 			},
@@ -155,8 +149,6 @@ func TestUseCase_Login(t *testing.T) {
 			wantErr:     true,
 			expectedErr: customerrors.NewInternalError(nil, "failed to save token"),
 			deps: func(t *testing.T) UseCase {
-				logger := logger.NewLogger("local", "test")
-
 				mockUser, err := models.NewUser(userID, "testuser", email, hashedPassword)
 				assert.NoError(t, err)
 
@@ -175,7 +167,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger,
+					logger:    logger.NewLogger("local", "test"),
 					tokenTTL:  ttlDuration,
 				}
 			},
