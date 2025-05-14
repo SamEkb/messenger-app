@@ -37,13 +37,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # Redis
-  redis:
-    image: redis:7
-    container_name: redis
-    ports: [ "6379:6379" ]
-    networks: [ messenger-network ]
-
   # MongoDB
   mongo:
     image: mongo:7
@@ -72,11 +65,9 @@ services:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=auth_db
-      - REDIS_ADDR=redis:6379
     depends_on:
       - kafka
       - postgres
-      - redis
     networks:
       - messenger-network
     restart: on-failure
@@ -97,11 +88,9 @@ services:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=users_db
-      - REDIS_ADDR=redis:6379
     depends_on:
       - kafka
       - postgres
-      - redis
     networks:
       - messenger-network
     restart: on-failure
@@ -122,11 +111,9 @@ services:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=friends_db
-      - REDIS_ADDR=redis:6379
     depends_on:
       - users-service
       - postgres
-      - redis
     networks:
       - messenger-network
     restart: on-failure
@@ -148,12 +135,10 @@ services:
       - MONGO_USER=root
       - MONGO_PASSWORD=root
       - MONGO_DB=chat_db
-      - REDIS_ADDR=redis:6379
     depends_on:
       - users-service
       - friends-service
       - mongo
-      - redis
     networks:
       - messenger-network
     restart: on-failure
