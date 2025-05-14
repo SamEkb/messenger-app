@@ -45,7 +45,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 				}
 			},
 		},
@@ -63,7 +63,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 				}
 			},
 		},
@@ -82,7 +82,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 				}
 			},
 		},
@@ -104,7 +104,7 @@ func TestUseCase_Logout(t *testing.T) {
 
 				return UseCase{
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 				}
 			},
 		},

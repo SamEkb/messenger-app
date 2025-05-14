@@ -55,7 +55,7 @@ func TestUseCase_GetByNickname(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger.NewLogger("local", "test"),
+					logger:         logger.NewMockLogger(),
 				}
 			},
 		},
@@ -75,7 +75,7 @@ func TestUseCase_GetByNickname(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger.NewLogger("local", "test"),
+					logger:         logger.NewMockLogger(),
 				}
 			},
 		},

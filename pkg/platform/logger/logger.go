@@ -68,3 +68,18 @@ func NewLogger(env string, serviceName string) Logger {
 
 	return &slogLogger{l: logger.With("service", serviceName)}
 }
+
+type MockLogger struct {
+	Entries []string
+}
+
+func NewMockLogger() *MockLogger {
+	return &MockLogger{Entries: make([]string, 0)}
+}
+
+func (m *MockLogger) Debug(msg string, args ...any) { m.Entries = append(m.Entries, "DEBUG: "+msg) }
+func (m *MockLogger) Info(msg string, args ...any)  { m.Entries = append(m.Entries, "INFO: "+msg) }
+func (m *MockLogger) Warn(msg string, args ...any)  { m.Entries = append(m.Entries, "WARN: "+msg) }
+func (m *MockLogger) Error(msg string, args ...any) { m.Entries = append(m.Entries, "ERROR: "+msg) }
+func (m *MockLogger) With(args ...any) Logger       { return m }
+func (m *MockLogger) Fatal(msg string, args ...any) { m.Entries = append(m.Entries, "FATAL: "+msg) }

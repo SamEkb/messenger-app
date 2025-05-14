@@ -47,7 +47,7 @@ func TestUseCase_Update(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger.NewLogger("local", "test"),
+					logger:         logger.NewMockLogger(),
 				}
 			},
 		},
@@ -71,7 +71,7 @@ func TestUseCase_Update(t *testing.T) {
 
 				return UseCase{
 					userRepository: mockUserRepository,
-					logger:         logger.NewLogger("local", "test"),
+					logger:         logger.NewMockLogger(),
 				}
 			},
 		},

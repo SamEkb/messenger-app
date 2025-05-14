@@ -51,7 +51,7 @@ func TestUseCase_Register(t *testing.T) {
 				return UseCase{
 					authRepo:           mockAuthRepo,
 					userEventPublisher: mockKafkaProducer,
-					logger:             logger.NewLogger("local", "test"),
+					logger:             logger.NewMockLogger(),
 				}
 			},
 		},
@@ -74,7 +74,7 @@ func TestUseCase_Register(t *testing.T) {
 
 				return UseCase{
 					authRepo: mockAuthRepo,
-					logger:   logger.NewLogger("local", "test"),
+					logger:   logger.NewMockLogger(),
 				}
 			},
 		},
@@ -104,7 +104,7 @@ func TestUseCase_Register(t *testing.T) {
 				return UseCase{
 					authRepo:           mockAuthRepo,
 					userEventPublisher: mockKafkaProducer,
-					logger:             logger.NewLogger("local", "test"),
+					logger:             logger.NewMockLogger(),
 				}
 			},
 		},

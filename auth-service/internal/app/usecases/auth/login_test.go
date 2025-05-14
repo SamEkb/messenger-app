@@ -75,7 +75,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 					tokenTTL:  ttlDuration,
 				}
 			},
@@ -102,7 +102,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 					tokenTTL:  ttlDuration,
 				}
 			},
@@ -132,7 +132,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 					tokenTTL:  ttlDuration,
 				}
 			},
@@ -167,7 +167,7 @@ func TestUseCase_Login(t *testing.T) {
 				return UseCase{
 					authRepo:  mockAuthRepo,
 					tokenRepo: mockTokenRepo,
-					logger:    logger.NewLogger("local", "test"),
+					logger:    logger.NewMockLogger(),
 					tokenTTL:  ttlDuration,
 				}
 			},
