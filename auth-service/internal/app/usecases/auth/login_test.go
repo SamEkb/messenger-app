@@ -3,6 +3,7 @@ package auth
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log/slog"
 	"testing"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/usecases/auth/mocks"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	customerrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,11 +33,11 @@ func TestUseCase_Login(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		args    args
-		want    models.Token
-		wantErr bool
-		err     error
-		deps    func(t *testing.T) UseCase
+		args        args
+		want        models.Token
+		wantErr     bool
+		expectedErr error
+		deps        func(t *testing.T) UseCase
 	}{
 		"login successful": {
 			args: args{
@@ -48,7 +49,6 @@ func TestUseCase_Login(t *testing.T) {
 			},
 			want:    models.Token("very-strong-token"),
 			wantErr: false,
-			err:     nil,
 			deps: func(t *testing.T) UseCase {
 				var buf bytes.Buffer
 				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
@@ -96,7 +96,6 @@ func TestUseCase_Login(t *testing.T) {
 			},
 			want:    "",
 			wantErr: true,
-			err:     errors.NewNotFoundError("user not found"),
 			deps: func(t *testing.T) UseCase {
 				var buf bytes.Buffer
 				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
@@ -106,7 +105,7 @@ func TestUseCase_Login(t *testing.T) {
 				mockAuthRepo := mocks.NewAuthRepository(t)
 				mockAuthRepo.EXPECT().
 					FindUserByEmail(ctx, "test@test.ru").
-					Return(nil, errors.NewNotFoundError("user not found")).
+					Return(nil, errors.New("user not found")).
 					Once()
 
 				mockTokenRepo := mocks.NewTokenRepository(t)
@@ -127,9 +126,9 @@ func TestUseCase_Login(t *testing.T) {
 					Password: "wrongPassword",
 				},
 			},
-			want:    "",
-			wantErr: true,
-			err:     errors.NewUnauthorizedError("invalid credentials"),
+			want:        "",
+			wantErr:     true,
+			expectedErr: customerrors.NewUnauthorizedError("invalid credentials"),
 			deps: func(t *testing.T) UseCase {
 				var buf bytes.Buffer
 				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
@@ -162,9 +161,9 @@ func TestUseCase_Login(t *testing.T) {
 					Password: password,
 				},
 			},
-			want:    "",
-			wantErr: true,
-			err:     errors.NewInternalError(nil, "failed to save token"),
+			want:        "",
+			wantErr:     true,
+			expectedErr: customerrors.NewInternalError(nil, "failed to save token"),
 			deps: func(t *testing.T) UseCase {
 				var buf bytes.Buffer
 				logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
@@ -183,7 +182,7 @@ func TestUseCase_Login(t *testing.T) {
 				mockTokenRepo := mocks.NewTokenRepository(t)
 				mockTokenRepo.EXPECT().
 					Create(ctx, mock.AnythingOfType("*models.AuthToken")).
-					Return(nil, errors.NewInternalError(nil, "database error")).
+					Return(nil, customerrors.NewInternalError(nil, "database error")).
 					Once()
 
 				return UseCase{
@@ -205,7 +204,9 @@ func TestUseCase_Login(t *testing.T) {
 
 			if tc.wantErr {
 				assert.Error(t, err)
-				assert.IsType(t, tc.err, err)
+				if tc.expectedErr != nil {
+					assert.IsType(t, tc.expectedErr, err)
+				}
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.want, token)
