@@ -60,6 +60,13 @@ func NewChatRepository(client *mongo.Client, dbName string, logger logger.Logger
 }
 
 func (r *ChatRepository) Create(ctx context.Context, participants []string) (*models.Chat, error) {
+	timeout := r.config.Timeout
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("creating chat", "participants", participants)
 
 	chat, err := models.NewChat(participants)
@@ -87,6 +94,13 @@ func (r *ChatRepository) Create(ctx context.Context, participants []string) (*mo
 }
 
 func (r *ChatRepository) Get(ctx context.Context, userID string) ([]*models.Chat, error) {
+	timeout := r.config.Timeout
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("getting chats", "user_id", userID)
 
 	filter := bson.M{"participants": userID}
@@ -161,6 +175,13 @@ func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, 
 }
 
 func (r *ChatRepository) GetMessages(ctx context.Context, chatID models.ChatID) ([]*models.Message, error) {
+	timeout := r.config.Timeout
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("getting messages", "chat_id", chatID)
 
 	filter := bson.M{"_id": chatID.String()}
