@@ -30,7 +30,7 @@ func main() {
 	}
 	defer mongoClient.Disconnect(ctx)
 
-	chatRepository := mongodb.NewChatRepository(mongoClient, config.MongoDB.Database, log)
+	chatRepository := mongodb.NewChatRepository(mongoClient, config.MongoDB, log)
 
 	txManager := mongolib.NewTxManager(mongoClient)
 

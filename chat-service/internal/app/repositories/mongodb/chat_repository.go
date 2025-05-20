@@ -38,8 +38,8 @@ type msgDocument struct {
 	Timestamp time.Time `bson:"timestamp"`
 }
 
-func NewChatRepository(client *mongo.Client, dbName string, logger logger.Logger) *ChatRepository {
-	db := client.Database(dbName)
+func NewChatRepository(client *mongo.Client, dbCfg *env.MongoDBConfig, logger logger.Logger) *ChatRepository {
+	db := client.Database(dbCfg.URI)
 
 	_, err := db.Collection("chats").Indexes().CreateOne(
 		context.Background(),
@@ -56,6 +56,7 @@ func NewChatRepository(client *mongo.Client, dbName string, logger logger.Logger
 	return &ChatRepository{
 		db:     db,
 		logger: logger.With("component", "chat_repository"),
+		config: dbCfg,
 	}
 }
 
