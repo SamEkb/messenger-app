@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	_ "github.com/lib/pq"
+
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	postgreslib "github.com/SamEkb/messenger-app/pkg/platform/postgres"
 	"github.com/SamEkb/messenger-app/users-service/config/env"

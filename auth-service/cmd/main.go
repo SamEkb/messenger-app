@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	_ "github.com/lib/pq"
+
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/in/grpc"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/out/kafka"
