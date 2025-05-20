@@ -16,8 +16,9 @@ type RateLimitConfig struct {
 	Burst int
 }
 
-func NewClientInterceptor(log logger.Logger, limit rate.Limit, burst int) grpc.UnaryClientInterceptor {
-	limiter := rate.NewLimiter(limit, burst)
+func NewClientInterceptor(log logger.Logger, limit float64, burst int) grpc.UnaryClientInterceptor {
+	rateLimit := convertToRateLimit(limit)
+	limiter := rate.NewLimiter(rateLimit, burst)
 
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if err := limiter.Wait(ctx); err != nil {
