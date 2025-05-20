@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -19,6 +20,7 @@ var _ ports.ChatRepository = (*ChatRepository)(nil)
 type ChatRepository struct {
 	db     *mongo.Database
 	logger logger.Logger
+	config *env.MongoDBConfig
 }
 
 type chatDocument struct {
@@ -116,6 +118,12 @@ func (r *ChatRepository) Get(ctx context.Context, userID string) ([]*models.Chat
 }
 
 func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, authorID, content string) (*models.Message, error) {
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.config.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("sending message", "chat_id", chatID, "author_id", authorID)
 
 	message, err := models.NewMessage(authorID, content)

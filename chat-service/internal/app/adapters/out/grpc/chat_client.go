@@ -42,7 +42,11 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 		mw.WithMinRequests(f.config.CircuitBreaker.MinRequests),
 		mw.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
 	)
-	retryInterceptor := mw.RetryUnaryClientInterceptor(f.config.MaxRetries, f.config.RetryDelay, f.logger)
+	retryInterceptor := mw.RetryUnaryClientInterceptor(
+		f.config.RetryConfig.MaxRetries,
+		f.config.RetryConfig.RetryDelay,
+		f.logger,
+	)
 
 	conn, err := grpc.DialContext(
 		ctx,
@@ -62,6 +66,7 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 	return &UsersServiceClientAdapter{
 		client: client,
 		conn:   conn,
+		config: f.config,
 	}, nil
 }
 
@@ -81,7 +86,11 @@ func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServi
 		mw.WithMinRequests(f.config.CircuitBreaker.MinRequests),
 		mw.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
 	)
-	retryInterceptor := mw.RetryUnaryClientInterceptor(f.config.MaxRetries, f.config.RetryDelay, f.logger)
+	retryInterceptor := mw.RetryUnaryClientInterceptor(
+		f.config.RetryConfig.MaxRetries,
+		f.config.RetryConfig.RetryDelay,
+		f.logger,
+	)
 
 	conn, err := grpc.DialContext(
 		ctx,
@@ -101,5 +110,6 @@ func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServi
 	return &FriendsServiceClientAdapter{
 		client: client,
 		conn:   conn,
+		config: f.config,
 	}, nil
 }

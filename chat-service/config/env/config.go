@@ -40,6 +40,9 @@ type ClientsConfig struct {
 	RetryConfig    *RetryConfig
 	CircuitBreaker *CircuitBreakerConfig
 	RateLimit      *RateLimitServerConfig
+
+	UsersClientTimeout   time.Duration
+	FriendsClientTimeout time.Duration
 }
 
 type RetryConfig struct {
@@ -75,6 +78,7 @@ type MethodLimitConfig struct {
 type MongoDBConfig struct {
 	URI      string
 	Database string
+	Timeout  time.Duration
 }
 
 func (m *MongoDBConfig) ConnectionString() string {
@@ -108,10 +112,7 @@ func LoadConfig() (*Config, error) {
 		Debug:   getEnv("DEBUG", "dev"),
 		Server:  serverConfig(),
 		Clients: clientsConfig(),
-		MongoDB: &MongoDBConfig{
-			URI:      getEnv("MONGODB_URI", "mongodb://localhost:27017"),
-			Database: getEnv("MONGODB_DATABASE", "chat_db"),
-		},
+		MongoDB: mongoDBConfig(),
 	}
 
 	return c, nil
@@ -153,8 +154,10 @@ func clientsConfig() *ClientsConfig {
 			MaxRetries: getEnvAsInt("MAX_RETRIES", 3),
 			RetryDelay: time.Duration(getEnvAsInt("RETRY_DELAY", 100)) * time.Millisecond,
 		},
-		RateLimit:      clientRateLimitConfig(),
-		CircuitBreaker: circuitBreakerConfig(),
+		RateLimit:            clientRateLimitConfig(),
+		CircuitBreaker:       circuitBreakerConfig(),
+		UsersClientTimeout:   time.Duration(getEnvAsInt("USERS_CLIENT_TIMEOUT", 3000)) * time.Millisecond,
+		FriendsClientTimeout: time.Duration(getEnvAsInt("FRIENDS_CLIENT_TIMEOUT", 3000)) * time.Millisecond,
 	}
 }
 
@@ -180,6 +183,14 @@ func circuitBreakerConfig() *CircuitBreakerConfig {
 			"INTERNAL", "UNAVAILABLE", "DATA_LOSS", "DEADLINE_EXCEEDED",
 			"RESOURCE_EXHAUSTED", "UNKNOWN", "ABORTED",
 		}),
+	}
+}
+
+func mongoDBConfig() *MongoDBConfig {
+	return &MongoDBConfig{
+		URI:      getEnv("MONGODB_URI", "mongodb://localhost:27017"),
+		Database: getEnv("MONGODB_DATABASE", "chat_db"),
+		Timeout:  time.Duration(getEnvAsInt("MONGODB_TIMEOUT", 5000)) * time.Millisecond,
 	}
 }
 

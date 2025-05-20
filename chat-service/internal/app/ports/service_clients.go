@@ -8,7 +8,7 @@ import (
 )
 
 type UserServiceClient interface {
-	GetUserProfile(userID string) (*UserProfile, error)
+	GetUserProfile(ctx context.Context, userID string) (*UserProfile, error)
 	GetProfiles(ctx context.Context, request *users.GetProfilesRequest) (*GetProfilesResponse, error)
 }
 
@@ -18,7 +18,7 @@ type GetProfilesResponse struct {
 }
 
 type FriendServiceClient interface {
-	CheckFriendsStatus(userID1, userID2 string) (friends.FriendshipStatus, error)
+	CheckFriendsStatus(ctx context.Context, userID1, userID2 string) (friends.FriendshipStatus, error)
 	CheckFriendshipsStatus(ctx context.Context, userIDs *friends.CheckFriendshipsStatusRequest) (*CheckFriendshipsStatusResponse, error)
 }
 

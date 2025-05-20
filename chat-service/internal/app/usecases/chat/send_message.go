@@ -28,7 +28,7 @@ func (u *UseCase) SendMessage(ctx context.Context, chatID string, authorID, cont
 		return nil, err
 	}
 
-	_, err := u.userClient.GetUserProfile(authorID)
+	_, err := u.userClient.GetUserProfile(ctx, authorID)
 	if err != nil {
 		u.logger.Error("failed to get user profile", "authorID", authorID, "error", err)
 		return nil, err
