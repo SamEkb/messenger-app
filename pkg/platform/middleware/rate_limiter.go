@@ -29,14 +29,19 @@ func NewClientInterceptor(log logger.Logger, limit rate.Limit, burst int) grpc.U
 	}
 }
 
-func NewServerInterceptor(log logger.Logger, defaultLimit rate.Limit, defaultBurst int) *ServerLimiter {
+func NewServerInterceptor(log logger.Logger, limit float64, burst int) *ServerLimiter {
+	rateLimit := convertToRateLimit(limit)
 	return &ServerLimiter{
 		logger:       log,
-		defaultLimit: defaultLimit,
-		defaultBurst: defaultBurst,
+		defaultLimit: rateLimit,
+		defaultBurst: burst,
 		methodLimits: make(map[string]*rate.Limiter),
 		mutex:        &sync.RWMutex{},
 	}
+}
+
+func convertToRateLimit(limit float64) rate.Limit {
+	return rate.Limit(limit)
 }
 
 type ServerLimiter struct {
@@ -48,16 +53,18 @@ type ServerLimiter struct {
 	mutex         *sync.RWMutex
 }
 
-func (s *ServerLimiter) WithMethodLimit(fullMethodName string, limit rate.Limit, burst int) *ServerLimiter {
+func (s *ServerLimiter) WithMethodLimit(fullMethodName string, limit float64, burst int) *ServerLimiter {
+	rateLimit := convertToRateLimit(limit)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.methodLimits[fullMethodName] = rate.NewLimiter(limit, burst)
+	s.methodLimits[fullMethodName] = rate.NewLimiter(rateLimit, burst)
 	return s
 }
 
-func (s *ServerLimiter) WithGlobalLimit(limit rate.Limit, burst int) *ServerLimiter {
-	s.globalLimiter = rate.NewLimiter(limit, burst)
+func (s *ServerLimiter) WithGlobalLimit(limit float64, burst int) *ServerLimiter {
+	rateLimit := convertToRateLimit(limit)
+	s.globalLimiter = rate.NewLimiter(rateLimit, burst)
 	return s
 }
 
