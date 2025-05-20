@@ -58,13 +58,16 @@ func main() {
 	}
 
 	defer func() {
-		log.Info("Closing gRPC clients...")
+		log.Info("Closing gRPC users client...")
 		if err := usersClient.Close(); err != nil {
 			log.Error("Failed to close users client", "error", err)
 		} else {
 			log.Info("Users client closed successfully")
 		}
+	}()
 
+	defer func() {
+		log.Info("Closing gRPC friends client...")
 		if err := friendsClient.Close(); err != nil {
 			log.Error("Failed to close friends client", "error", err)
 		} else {
