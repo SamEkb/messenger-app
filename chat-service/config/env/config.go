@@ -29,6 +29,8 @@ type ServerConfig struct {
 	GRPCPort int
 	HTTPHost string
 	HTTPPort int
+
+	RateLimiter *RateLimitServerConfig
 }
 
 type ClientsConfig struct {
@@ -38,6 +40,7 @@ type ClientsConfig struct {
 	RetryDelay time.Duration
 
 	CircuitBreaker *CircuitBreakerConfig
+	RateLimit      *RateLimitServerConfig
 }
 
 type CircuitBreakerConfig struct {
@@ -49,6 +52,20 @@ type CircuitBreakerConfig struct {
 	MinRequests      uint32
 	FailureRatio     float64
 	ServerErrorCodes []string
+}
+
+type RateLimitServerConfig struct {
+	Enabled      bool
+	DefaultLimit float64
+	DefaultBurst int
+	GlobalLimit  float64
+	GlobalBurst  int
+	MethodLimits map[string]MethodLimitConfig
+}
+
+type MethodLimitConfig struct {
+	Limit float64
+	Burst int
 }
 
 type MongoDBConfig struct {

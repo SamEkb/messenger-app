@@ -27,6 +27,11 @@ func NewClient(config *env.ClientsConfig, logger logger.Logger) *Client {
 }
 
 func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceClient, error) {
+	clientInterceptor := mw.NewClientInterceptor(
+		f.logger,
+		f.config.RateLimit.DefaultLimit,
+		f.config.RateLimit.DefaultBurst,
+	)
 	cbInterceptor := mw.NewCircuitBreakerInterceptor(
 		f.logger,
 		mw.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
@@ -44,6 +49,7 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 		f.config.Users.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
+			clientInterceptor,
 			cbInterceptor,
 			retryInterceptor,
 		),
@@ -60,6 +66,11 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 }
 
 func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServiceClient, error) {
+	clientInterceptor := mw.NewClientInterceptor(
+		f.logger,
+		f.config.RateLimit.DefaultLimit,
+		f.config.RateLimit.DefaultBurst,
+	)
 	cbInterceptor := mw.NewCircuitBreakerInterceptor(
 		f.logger,
 		mw.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
@@ -77,6 +88,7 @@ func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServi
 		f.config.Friends.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
+			clientInterceptor,
 			cbInterceptor,
 			retryInterceptor,
 		),

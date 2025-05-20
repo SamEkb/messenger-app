@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/SamEkb/messenger-app/pkg/platform/logger v0.0.0-00010101000000-000000000000
 	github.com/sony/gobreaker/v2 v2.1.0
+	golang.org/x/time v0.11.0
 	google.golang.org/grpc v1.72.1
 )
 
