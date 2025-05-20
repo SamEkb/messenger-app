@@ -34,17 +34,20 @@ type ServerConfig struct {
 }
 
 type ClientsConfig struct {
-	Users      *ServiceClientConfig
-	Friends    *ServiceClientConfig
-	MaxRetries int
-	RetryDelay time.Duration
+	Users   *ServiceClientConfig
+	Friends *ServiceClientConfig
 
+	RetryConfig    *RetryConfig
 	CircuitBreaker *CircuitBreakerConfig
 	RateLimit      *RateLimitServerConfig
 }
 
+type RetryConfig struct {
+	MaxRetries int
+	RetryDelay time.Duration
+}
+
 type CircuitBreakerConfig struct {
-	Enabled          bool
 	Name             string
 	MaxRequests      uint32
 	Interval         time.Duration
@@ -55,11 +58,12 @@ type CircuitBreakerConfig struct {
 }
 
 type RateLimitServerConfig struct {
-	Enabled      bool
 	DefaultLimit float64
 	DefaultBurst int
-	GlobalLimit  float64
-	GlobalBurst  int
+
+	GlobalLimit float64
+	GlobalBurst int
+
 	MethodLimits map[string]MethodLimitConfig
 }
 
@@ -102,47 +106,81 @@ func LoadConfig() (*Config, error) {
 	c := &Config{
 		AppName: getEnv("APP_NAME", "ChatService"),
 		Debug:   getEnv("DEBUG", "dev"),
-		Server:  &ServerConfig{},
-		Clients: &ClientsConfig{
-			Users:      &ServiceClientConfig{},
-			Friends:    &ServiceClientConfig{},
-			MaxRetries: 3,
-			RetryDelay: 100 * time.Millisecond,
-			CircuitBreaker: &CircuitBreakerConfig{
-				Enabled:      getEnvAsBool("CB_ENABLED", true),
-				Name:         getEnv("CB_NAME", "grpc_circuit_breaker"),
-				MaxRequests:  uint32(getEnvAsInt("CB_MAX_REQUESTS", 10)),
-				Interval:     time.Duration(getEnvAsInt("CB_INTERVAL_SEC", 60)) * time.Second,
-				Timeout:      time.Duration(getEnvAsInt("CB_TIMEOUT_SEC", 300)) * time.Second,
-				MinRequests:  uint32(getEnvAsInt("CB_MIN_REQUESTS", 40)),
-				FailureRatio: getEnvAsFloat("CB_FAILURE_RATIO", 0.6),
-				ServerErrorCodes: getEnvAsStringSlice("CB_SERVER_ERROR_CODES", []string{
-					"INTERNAL", "UNAVAILABLE", "DATA_LOSS", "DEADLINE_EXCEEDED",
-					"RESOURCE_EXHAUSTED", "UNKNOWN", "ABORTED",
-				}),
-			},
+		Server:  serverConfig(),
+		Clients: clientsConfig(),
+		MongoDB: &MongoDBConfig{
+			URI:      getEnv("MONGODB_URI", "mongodb://localhost:27017"),
+			Database: getEnv("MONGODB_DATABASE", "chat_db"),
 		},
-		MongoDB: &MongoDBConfig{},
 	}
 
-	c.Server.GRPCHost = getEnv("GRPC_HOST", "0.0.0.0")
-	c.Server.GRPCPort = getEnvAsInt("GRPC_PORT", DefaultGRPCPort)
-	c.Server.HTTPHost = getEnv("HTTP_HOST", "0.0.0.0")
-	c.Server.HTTPPort = getEnvAsInt("HTTP_PORT", DefaultHTTPPort)
-
-	c.Clients.Users.Host = getEnv("USERS_SERVICE_HOST", "localhost")
-	c.Clients.Users.Port = getEnvAsInt("USERS_SERVICE_PORT", 9004)
-
-	c.Clients.Friends.Host = getEnv("FRIENDS_SERVICE_HOST", "localhost")
-	c.Clients.Friends.Port = getEnvAsInt("FRIENDS_SERVICE_PORT", 9003)
-
-	c.Clients.MaxRetries = getEnvAsInt("MAX_RETRIES", 3)
-	c.Clients.RetryDelay = time.Duration(getEnvAsInt("RETRY_DELAY", 100)) * time.Millisecond
-
-	c.MongoDB.URI = getEnv("MONGODB_URI", "mongodb://localhost:27017")
-	c.MongoDB.Database = getEnv("MONGODB_DATABASE", "chat_db")
-
 	return c, nil
+}
+
+func serverConfig() *ServerConfig {
+	return &ServerConfig{
+		GRPCHost: getEnv("GRPC_HOST", "0.0.0.0"),
+		GRPCPort: getEnvAsInt("GRPC_PORT", DefaultGRPCPort),
+		HTTPHost: getEnv("HTTP_HOST", "0.0.0.0"),
+		HTTPPort: getEnvAsInt("HTTP_PORT", DefaultHTTPPort),
+
+		RateLimiter: serverRateLimitConfig(),
+	}
+}
+
+func serverRateLimitConfig() *RateLimitServerConfig {
+	return &RateLimitServerConfig{
+		DefaultLimit: getEnvAsFloat("SERVER_RATE_LIMIT", 10),
+		DefaultBurst: getEnvAsInt("SERVER_RATE_BURST", 5),
+		GlobalLimit:  getEnvAsFloat("SERVER_GLOBAL_RATE_LIMIT", 10),
+		GlobalBurst:  getEnvAsInt("SERVER_GLOBAL_RATE_BURST", 5),
+
+		MethodLimits: map[string]MethodLimitConfig{},
+	}
+}
+
+func clientsConfig() *ClientsConfig {
+	return &ClientsConfig{
+		Users: &ServiceClientConfig{
+			Host: getEnv("USERS_SERVICE_HOST", "localhost"),
+			Port: getEnvAsInt("USERS_SERVICE_PORT", 9004),
+		},
+		Friends: &ServiceClientConfig{
+			Host: getEnv("FRIENDS_SERVICE_HOST", "localhost"),
+			Port: getEnvAsInt("FRIENDS_SERVICE_PORT", 9003),
+		},
+		RetryConfig: &RetryConfig{
+			MaxRetries: getEnvAsInt("MAX_RETRIES", 3),
+			RetryDelay: time.Duration(getEnvAsInt("RETRY_DELAY", 100)) * time.Millisecond,
+		},
+		RateLimit:      clientRateLimitConfig(),
+		CircuitBreaker: circuitBreakerConfig(),
+	}
+}
+
+func clientRateLimitConfig() *RateLimitServerConfig {
+	return &RateLimitServerConfig{
+		DefaultLimit: getEnvAsFloat("CLIENT_RATE_LIMIT", 10),
+		DefaultBurst: getEnvAsInt("CLIENT_RATE_BURST", 5),
+		GlobalLimit:  getEnvAsFloat("CLIENT_GLOBAL_RATE_LIMIT", 10),
+		GlobalBurst:  getEnvAsInt("CLIENT_GLOBAL_RATE_BURST", 5),
+		MethodLimits: map[string]MethodLimitConfig{},
+	}
+}
+
+func circuitBreakerConfig() *CircuitBreakerConfig {
+	return &CircuitBreakerConfig{
+		Name:         getEnv("CB_NAME", "grpc_circuit_breaker"),
+		MaxRequests:  uint32(getEnvAsInt("CB_MAX_REQUESTS", 10)),
+		Interval:     time.Duration(getEnvAsInt("CB_INTERVAL_SEC", 60)) * time.Second,
+		Timeout:      time.Duration(getEnvAsInt("CB_TIMEOUT_SEC", 300)) * time.Second,
+		MinRequests:  uint32(getEnvAsInt("CB_MIN_REQUESTS", 40)),
+		FailureRatio: getEnvAsFloat("CB_FAILURE_RATIO", 0.6),
+		ServerErrorCodes: getEnvAsStringSlice("CB_SERVER_ERROR_CODES", []string{
+			"INTERNAL", "UNAVAILABLE", "DATA_LOSS", "DEADLINE_EXCEEDED",
+			"RESOURCE_EXHAUSTED", "UNKNOWN", "ABORTED",
+		}),
+	}
 }
 
 func getEnv(key, defaultValue string) string {
@@ -165,16 +203,6 @@ func getEnvAsInt(key string, defaultValue int) int {
 func getEnvAsStringSlice(key string, defaultValue []string) []string {
 	if v := os.Getenv(key); v != "" {
 		return strings.Split(v, ",")
-	}
-	return defaultValue
-}
-
-func getEnvAsBool(key string, defaultValue bool) bool {
-	if v := os.Getenv(key); v != "" {
-		val, err := strconv.ParseBool(v)
-		if err == nil {
-			return val
-		}
 	}
 	return defaultValue
 }
