@@ -96,8 +96,6 @@ func main() {
 	if runErr := server.RunServers(appCtx); runErr != nil {
 		if errors.Is(runErr, context.Canceled) {
 			log.Info("gRPC server shutdown gracefully: context canceled.")
-		} else if runErr.Error() == "grpc: the server has been stopped" {
-			log.Info("gRPC server shutdown gracefully: server stopped.")
 		} else {
 			log.Error("gRPC server failed or stopped unexpectedly", "error", runErr)
 		}
