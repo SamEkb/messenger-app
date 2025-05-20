@@ -27,13 +27,26 @@ func NewClient(config *env.ClientsConfig, logger logger.Logger) *Client {
 }
 
 func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceClient, error) {
+	cbInterceptor := mw.NewCircuitBreakerInterceptor(
+		f.logger,
+		mw.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
+		mw.WithInterval(f.config.CircuitBreaker.Interval),
+		mw.WithTimeout(f.config.CircuitBreaker.Timeout),
+		mw.WithName(f.config.CircuitBreaker.Name),
+		mw.WithMaxRequests(f.config.CircuitBreaker.MaxRequests),
+		mw.WithMinRequests(f.config.CircuitBreaker.MinRequests),
+		mw.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
+	)
 	retryInterceptor := mw.RetryUnaryClientInterceptor(f.config.MaxRetries, f.config.RetryDelay, f.logger)
 
 	conn, err := grpc.DialContext(
 		ctx,
 		f.config.Users.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(retryInterceptor),
+		grpc.WithChainUnaryInterceptor(
+			cbInterceptor,
+			retryInterceptor,
+		),
 	)
 	if err != nil {
 		return nil, errors.NewServiceError(err, "failed to connect to Users Service")
@@ -47,13 +60,26 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 }
 
 func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServiceClient, error) {
+	cbInterceptor := mw.NewCircuitBreakerInterceptor(
+		f.logger,
+		mw.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
+		mw.WithInterval(f.config.CircuitBreaker.Interval),
+		mw.WithTimeout(f.config.CircuitBreaker.Timeout),
+		mw.WithName(f.config.CircuitBreaker.Name),
+		mw.WithMaxRequests(f.config.CircuitBreaker.MaxRequests),
+		mw.WithMinRequests(f.config.CircuitBreaker.MinRequests),
+		mw.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
+	)
 	retryInterceptor := mw.RetryUnaryClientInterceptor(f.config.MaxRetries, f.config.RetryDelay, f.logger)
 
 	conn, err := grpc.DialContext(
 		ctx,
 		f.config.Friends.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(retryInterceptor),
+		grpc.WithChainUnaryInterceptor(
+			cbInterceptor,
+			retryInterceptor,
+		),
 	)
 	if err != nil {
 		return nil, errors.NewServiceError(err, "failed to connect to Friends Service")

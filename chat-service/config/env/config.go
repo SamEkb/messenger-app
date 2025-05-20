@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -35,6 +36,19 @@ type ClientsConfig struct {
 	Friends    *ServiceClientConfig
 	MaxRetries int
 	RetryDelay time.Duration
+
+	CircuitBreaker *CircuitBreakerConfig
+}
+
+type CircuitBreakerConfig struct {
+	Enabled          bool
+	Name             string
+	MaxRequests      uint32
+	Interval         time.Duration
+	Timeout          time.Duration
+	MinRequests      uint32
+	FailureRatio     float64
+	ServerErrorCodes []string
 }
 
 type MongoDBConfig struct {
@@ -77,6 +91,19 @@ func LoadConfig() (*Config, error) {
 			Friends:    &ServiceClientConfig{},
 			MaxRetries: 3,
 			RetryDelay: 100 * time.Millisecond,
+			CircuitBreaker: &CircuitBreakerConfig{
+				Enabled:      getEnvAsBool("CB_ENABLED", true),
+				Name:         getEnv("CB_NAME", "grpc_circuit_breaker"),
+				MaxRequests:  uint32(getEnvAsInt("CB_MAX_REQUESTS", 10)),
+				Interval:     time.Duration(getEnvAsInt("CB_INTERVAL_SEC", 60)) * time.Second,
+				Timeout:      time.Duration(getEnvAsInt("CB_TIMEOUT_SEC", 300)) * time.Second,
+				MinRequests:  uint32(getEnvAsInt("CB_MIN_REQUESTS", 40)),
+				FailureRatio: getEnvAsFloat("CB_FAILURE_RATIO", 0.6),
+				ServerErrorCodes: getEnvAsStringSlice("CB_SERVER_ERROR_CODES", []string{
+					"INTERNAL", "UNAVAILABLE", "DATA_LOSS", "DEADLINE_EXCEEDED",
+					"RESOURCE_EXHAUSTED", "UNKNOWN", "ABORTED",
+				}),
+			},
 		},
 		MongoDB: &MongoDBConfig{},
 	}
@@ -111,6 +138,33 @@ func getEnv(key, defaultValue string) string {
 func getEnvAsInt(key string, defaultValue int) int {
 	if v := os.Getenv(key); v != "" {
 		val, err := strconv.Atoi(v)
+		if err == nil {
+			return val
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsStringSlice(key string, defaultValue []string) []string {
+	if v := os.Getenv(key); v != "" {
+		return strings.Split(v, ",")
+	}
+	return defaultValue
+}
+
+func getEnvAsBool(key string, defaultValue bool) bool {
+	if v := os.Getenv(key); v != "" {
+		val, err := strconv.ParseBool(v)
+		if err == nil {
+			return val
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsFloat(key string, defaultValue float64) float64 {
+	if v := os.Getenv(key); v != "" {
+		val, err := strconv.ParseFloat(v, 64)
 		if err == nil {
 			return val
 		}

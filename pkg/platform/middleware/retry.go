@@ -1,4 +1,4 @@
-package grpc
+package middleware
 
 import (
 	"context"
@@ -59,14 +59,11 @@ func RetryUnaryClientInterceptor(maxRetries int, delay time.Duration, log logger
 func canRetryGrpcRequest(ctx context.Context) bool {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
-		return true
+		return false
 	}
 
-	if values := md.Get("x-idempotency-token"); len(values) > 0 {
-		return true
-	}
-
-	return true
+	values := md.Get("x-idempotency-token")
+	return len(values) > 0 && values[0] != ""
 }
 
 func isRetryableStatusCode(code codes.Code) bool {
