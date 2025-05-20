@@ -57,6 +57,21 @@ func main() {
 		log.Fatal("failed to create Friends Service client", "error", err)
 	}
 
+	defer func() {
+		log.Info("Closing gRPC clients...")
+		if err := usersClient.Close(); err != nil {
+			log.Error("Failed to close users client", "error", err)
+		} else {
+			log.Info("Users client closed successfully")
+		}
+
+		if err := friendsClient.Close(); err != nil {
+			log.Error("Failed to close friends client", "error", err)
+		} else {
+			log.Info("Friends client closed successfully")
+		}
+	}()
+
 	chatUseCase := chat.NewChatUseCase(chatRepository, usersClient, friendsClient, txManager, log)
 
 	server, err := grpcserver.NewChatServer(chatUseCase, config.Server, log)
