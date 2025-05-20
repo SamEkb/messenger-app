@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -30,8 +31,10 @@ type ServerConfig struct {
 }
 
 type ClientsConfig struct {
-	Users   *ServiceClientConfig
-	Friends *ServiceClientConfig
+	Users      *ServiceClientConfig
+	Friends    *ServiceClientConfig
+	MaxRetries int
+	RetryDelay time.Duration
 }
 
 type MongoDBConfig struct {
@@ -70,8 +73,10 @@ func LoadConfig() (*Config, error) {
 		Debug:   getEnv("DEBUG", "dev"),
 		Server:  &ServerConfig{},
 		Clients: &ClientsConfig{
-			Users:   &ServiceClientConfig{},
-			Friends: &ServiceClientConfig{},
+			Users:      &ServiceClientConfig{},
+			Friends:    &ServiceClientConfig{},
+			MaxRetries: 3,
+			RetryDelay: 100 * time.Millisecond,
 		},
 		MongoDB: &MongoDBConfig{},
 	}
@@ -86,6 +91,9 @@ func LoadConfig() (*Config, error) {
 
 	c.Clients.Friends.Host = getEnv("FRIENDS_SERVICE_HOST", "localhost")
 	c.Clients.Friends.Port = getEnvAsInt("FRIENDS_SERVICE_PORT", 9003)
+
+	c.Clients.MaxRetries = getEnvAsInt("MAX_RETRIES", 3)
+	c.Clients.RetryDelay = time.Duration(getEnvAsInt("RETRY_DELAY", 100)) * time.Millisecond
 
 	c.MongoDB.URI = getEnv("MONGODB_URI", "mongodb://localhost:27017")
 	c.MongoDB.Database = getEnv("MONGODB_DATABASE", "chat_db")

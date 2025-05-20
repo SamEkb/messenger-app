@@ -9,6 +9,7 @@ import (
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -26,10 +27,13 @@ func NewClient(config *env.ClientsConfig, logger logger.Logger) *Client {
 }
 
 func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceClient, error) {
+	retryInterceptor := mw.RetryUnaryClientInterceptor(f.config.MaxRetries, f.config.RetryDelay, f.logger)
+
 	conn, err := grpc.DialContext(
 		ctx,
 		f.config.Users.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(retryInterceptor),
 	)
 	if err != nil {
 		return nil, errors.NewServiceError(err, "failed to connect to Users Service")
@@ -43,10 +47,13 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 }
 
 func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServiceClient, error) {
+	retryInterceptor := mw.RetryUnaryClientInterceptor(f.config.MaxRetries, f.config.RetryDelay, f.logger)
+
 	conn, err := grpc.DialContext(
 		ctx,
 		f.config.Friends.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(retryInterceptor),
 	)
 	if err != nil {
 		return nil, errors.NewServiceError(err, "failed to connect to Friends Service")

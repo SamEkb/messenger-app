@@ -6,6 +6,7 @@ require (
 	github.com/SamEkb/messenger-app/pkg/api v0.0.0-00010101000000-000000000000
 	github.com/SamEkb/messenger-app/pkg/platform/errors v0.0.0-00010101000000-000000000000
 	github.com/SamEkb/messenger-app/pkg/platform/logger v0.0.0-00010101000000-000000000000
+	github.com/SamEkb/messenger-app/pkg/platform/middleware v0.0.0-00010101000000-000000000000
 	github.com/SamEkb/messenger-app/pkg/platform/mongodb v0.0.0-00010101000000-000000000000
 	github.com/bufbuild/protovalidate-go v0.10.0
 	github.com/google/uuid v1.6.0
@@ -13,7 +14,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.17.3
-	google.golang.org/grpc v1.72.0
+	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.6
 )
 
@@ -47,3 +48,5 @@ replace github.com/SamEkb/messenger-app/pkg/platform/logger => ../pkg/platform/l
 replace github.com/SamEkb/messenger-app/pkg/platform/errors => ../pkg/platform/errors
 
 replace github.com/SamEkb/messenger-app/pkg/platform/mongodb => ../pkg/platform/mongodb
+
+replace github.com/SamEkb/messenger-app/pkg/platform/middleware => ../pkg/platform/middleware
