@@ -11,6 +11,7 @@ import (
 
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 	middlewaregrpc "github.com/SamEkb/messenger-app/users-service/internal/middleware/grpc"
@@ -63,8 +64,19 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		recoverer := mw.RecoveryInterceptor(s.logger)
+		rls := mw.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
+			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
+		}
+		for method, lim := range s.cfg.RateLimiter.MethodLimits {
+			rls = rls.WithMethodLimit(method, lim.Limit, lim.Burst)
+		}
+
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
+				recoverer,
+				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
 				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),

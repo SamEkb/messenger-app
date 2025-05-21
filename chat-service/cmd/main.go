@@ -35,7 +35,7 @@ func main() {
 
 	defer func() {
 		log.Info("Disconnecting from MongoDB...")
-		disconnectCtx, cancelDisconnect := context.WithTimeout(context.Background(), 15*time.Second)
+		disconnectCtx, cancelDisconnect := context.WithTimeout(context.Background(), config.MongoDB.Timeout*time.Second)
 		defer cancelDisconnect()
 		if err := mongoClient.Disconnect(disconnectCtx); err != nil {
 			log.Error("Failed to disconnect from MongoDB during cleanup", "error", err)

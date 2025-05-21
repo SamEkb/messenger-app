@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/pkg/platform/postgres"
+	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
 )
@@ -15,17 +17,25 @@ var _ ports.UserRepository = (*UserRepository)(nil)
 type UserRepository struct {
 	txManager *postgres.TxManager
 	logger    logger.Logger
+	config    *env.DBConfig
 }
 
-func NewUserRepository(txManager *postgres.TxManager, logger logger.Logger) *UserRepository {
+func NewUserRepository(txManager *postgres.TxManager, logger logger.Logger, config *env.DBConfig) *UserRepository {
 	return &UserRepository{
 		txManager: txManager,
 		logger:    logger.With("component", "user_repository"),
+		config:    config,
 	}
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *models.User) (models.UserID, error) {
 	r.logger.Debug("attempting to create new user", "user_id", user.ID(), "email", user.Email())
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.config.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	_, err := q.ExecContext(ctx, `
@@ -44,6 +54,12 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) (models.
 
 func (r *UserRepository) Get(ctx context.Context, id models.UserID) (*models.User, error) {
 	r.logger.Debug("attempting to get user", "user_id", id)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.config.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	var user struct {
@@ -83,6 +99,12 @@ func (r *UserRepository) Get(ctx context.Context, id models.UserID) (*models.Use
 func (r *UserRepository) GetByNickname(ctx context.Context, nickname string) (*models.User, error) {
 	r.logger.Debug("attempting to get user by nickname", "nickname", nickname)
 
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.config.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	var user struct {
 		ID          string `db:"id"`
@@ -120,6 +142,12 @@ func (r *UserRepository) GetByNickname(ctx context.Context, nickname string) (*m
 
 func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 	r.logger.Debug("attempting to update user", "user_id", user.ID(), "email", user.Email())
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.config.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	result, err := q.ExecContext(ctx, `
