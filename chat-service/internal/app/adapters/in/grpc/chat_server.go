@@ -3,15 +3,17 @@ package grpc
 import (
 	"context"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	middlewaregrpc "github.com/SamEkb/messenger-app/chat-service/internal/middleware/grpc"
 	chat "github.com/SamEkb/messenger-app/pkg/api/chat_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -24,10 +26,10 @@ type ChatServer struct {
 	validator protovalidate.Validator
 	useCase   ports.ChatUseCase
 	cfg       *env.ServerConfig
-	logger    *slog.Logger
+	logger    logger.Logger
 }
 
-func NewChatServer(useCase ports.ChatUseCase, cfg *env.ServerConfig, logger *slog.Logger) (*ChatServer, error) {
+func NewChatServer(useCase ports.ChatUseCase, cfg *env.ServerConfig, logger logger.Logger) (*ChatServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, errors.NewInternalError(err, "failed to initialize validator")
@@ -57,9 +59,22 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		panicRecoverer := mw.RecoveryInterceptor(s.logger)
+		rls := mw.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
+			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
+		}
+		for method, lim := range s.cfg.RateLimiter.MethodLimits {
+			rls = rls.WithMethodLimit(method, lim.Limit, lim.Burst)
+		}
+
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
+				panicRecoverer,
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
+				rls.Interceptor(),
 			),
 		)
 		chat.RegisterChatServiceServer(grpcServer, s)

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 )
 
 func (a *UseCase) Logout(ctx context.Context, token models.Token) error {

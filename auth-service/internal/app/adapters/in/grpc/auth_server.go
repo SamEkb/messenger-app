@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -12,9 +11,11 @@ import (
 	"buf.build/go/protovalidate"
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc" // Импорт для интерцептора ошибок
-	apperrors "github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	middlewaregrpc "github.com/SamEkb/messenger-app/auth-service/internal/middleware/grpc"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
+	apperrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -28,10 +29,10 @@ type Server struct {
 	validator   protovalidate.Validator
 	authUseCase ports.AuthUseCase
 	cfg         *env.ServerConfig
-	logger      *slog.Logger
+	logger      logger.Logger
 }
 
-func NewServer(cfg *env.ServerConfig, authUseCase ports.AuthUseCase, logger *slog.Logger) (*Server, error) {
+func NewServer(cfg *env.ServerConfig, authUseCase ports.AuthUseCase, logger logger.Logger) (*Server, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, apperrors.NewInternalError(err, "failed to initialize validator")
@@ -61,8 +62,19 @@ func (s *Server) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		panicRecoverer := mw.RecoveryInterceptor(s.logger)
+		rls := mw.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
+			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
+		}
+		for method, lim := range s.cfg.RateLimiter.MethodLimits {
+			rls = rls.WithMethodLimit(method, lim.Limit, lim.Burst)
+		}
+
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
+				panicRecoverer,
+				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
 				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),

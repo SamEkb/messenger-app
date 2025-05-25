@@ -3,7 +3,7 @@ package middleware_grpc
 import (
 	"context"
 
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

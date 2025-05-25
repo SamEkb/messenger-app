@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/SamEkb/messenger-app/users-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 )
 

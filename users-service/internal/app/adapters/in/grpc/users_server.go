@@ -5,14 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
+	middlewaregrpc "github.com/SamEkb/messenger-app/users-service/internal/middleware/grpc"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -27,10 +29,10 @@ type UsersServiceServer struct {
 	userUseCase ports.UserUseCase
 	validator   protovalidate.Validator
 	cfg         *env.ServerConfig
-	logger      *slog.Logger
+	logger      logger.Logger
 }
 
-func NewServer(cfg *env.ServerConfig, userUseCase ports.UserUseCase, logger *slog.Logger) (*UsersServiceServer, error) {
+func NewServer(cfg *env.ServerConfig, userUseCase ports.UserUseCase, logger logger.Logger) (*UsersServiceServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize validator: %w", err)
@@ -62,9 +64,21 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		recoverer := mw.RecoveryInterceptor(s.logger)
+		rls := mw.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
+			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
+		}
+		for method, lim := range s.cfg.RateLimiter.MethodLimits {
+			rls = rls.WithMethodLimit(method, lim.Limit, lim.Burst)
+		}
+
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
+				recoverer,
+				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),
 		)
 		users.RegisterUsersServiceServer(grpcServer, s)

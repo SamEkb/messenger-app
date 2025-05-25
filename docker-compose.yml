@@ -25,80 +25,132 @@ services:
     networks:
       - messenger-network
 
+  # PostgreSQL
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports: [ "5432:5432" ]
+    networks: [ messenger-network ]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # MongoDB
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports: [ "27017:27017" ]
+    networks: [ messenger-network ]
+    volumes:
+      - mongodata:/data/db
+
   # Auth Service
   auth-service:
     build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./auth-service/Dockerfile
     container_name: auth-service
     ports:
       - "8001:8001"
       - "9001:9001"
     environment:
-      - PORT=8001
+      - HTTP_PORT=8001
+      - GRPC_PORT=9001
       - KAFKA_BROKERS=kafka:9092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=auth_db
+    depends_on:
+      - kafka
+      - postgres
     networks:
       - messenger-network
     restart: on-failure
-    depends_on:
-      - kafka
 
   # Users Service
   users-service:
     build:
-      context: ./users-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./users-service/Dockerfile
     container_name: users-service
     ports:
       - "8004:8004"
       - "9004:9004"
     environment:
-      - PORT=8004
+      - HTTP_PORT=8004
+      - GRPC_PORT=9004
       - KAFKA_BROKERS=kafka:9092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=users_db
+    depends_on:
+      - kafka
+      - postgres
     networks:
       - messenger-network
     restart: on-failure
-    depends_on:
-      - kafka
 
   # Friends Service
   friends-service:
     build:
-      context: ./friends-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./friends-service/Dockerfile
     container_name: friends-service
     ports:
       - "8003:8003"
       - "9003:9003"
     environment:
-      - PORT=8003
+      - HTTP_PORT=8003
+      - GRPC_PORT=9003
       - USERS_SERVICE_ADDR=users-service:9004
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=friends_db
+    depends_on:
+      - users-service
+      - postgres
     networks:
       - messenger-network
     restart: on-failure
-    depends_on:
-      - users-service
 
   # Chat Service
   chat-service:
     build:
-      context: ./chat-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./chat-service/Dockerfile
     container_name: chat-service
     ports:
       - "8002:8002"
       - "9002:9002"
     environment:
-      - PORT=8002
+      - HTTP_PORT=8002
+      - GRPC_PORT=9002
       - USERS_SERVICE_ADDR=users-service:9004
       - FRIENDS_SERVICE_ADDR=friends-service:9003
-    networks:
-      - messenger-network
-    restart: on-failure
+      - MONGO_HOST=mongo
+      - MONGO_USER=root
+      - MONGO_PASSWORD=root
+      - MONGO_DB=chat_db
     depends_on:
       - users-service
       - friends-service
+      - mongo
+    networks:
+      - messenger-network
+    restart: on-failure
 
 networks:
   messenger-network:
     driver: bridge
+
+volumes:
+  pgdata:
+  mongodata:

@@ -3,12 +3,12 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/Shopify/sarama"
 )
 
@@ -16,11 +16,11 @@ var _ ports.UserEventsKafkaProducer = (*UserEventsKafkaProducer)(nil)
 
 type UserEventsKafkaProducer struct {
 	producer sarama.SyncProducer
-	logger   *slog.Logger
+	logger   logger.Logger
 	topic    string
 }
 
-func NewUserEventsKafkaProducer(kafkaCfg *env.KafkaConfig, logger *slog.Logger) (*UserEventsKafkaProducer, error) {
+func NewUserEventsKafkaProducer(kafkaCfg *env.KafkaConfig, logger logger.Logger) (*UserEventsKafkaProducer, error) {
 	if kafkaCfg == nil {
 		return nil, errors.NewInvalidInputError("kafka config is nil")
 	}

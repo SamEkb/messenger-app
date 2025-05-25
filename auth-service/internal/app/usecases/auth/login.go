@@ -6,7 +6,7 @@ import (
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,7 +17,6 @@ func (a *UseCase) Login(ctx context.Context, dto *ports.LoginDto) (models.Token,
 	user, err := a.authRepo.FindUserByEmail(ctx, dto.Email)
 	if err != nil {
 		a.logger.Warn("user not found during login", "email", dto.Email, "error", err)
-		// Не меняем ошибку, так как репозиторий возвращает типизированную ошибку NotFound
 		return "", err
 	}
 

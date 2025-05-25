@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 )
 
 func (s *Server) Logout(ctx context.Context, req *auth.LogoutRequest) (*auth.LogoutResponse, error) {
