@@ -28,8 +28,15 @@ func (uc *UseCase) Update(ctx context.Context, dto *ports.UserDto) error {
 		return err
 	}
 
-	if err := uc.userRepository.Update(ctx, user); err != nil {
-		uc.logger.Error("Failed to update user", "error", err, "user_id", dto.ID)
+	err = uc.txManager.RunTx(ctx, func(txCtx context.Context) error {
+		if err := uc.userRepository.Update(txCtx, user); err != nil {
+			uc.logger.Error("Failed to update user", "error", err, "user_id", dto.ID)
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		return err
 	}
 

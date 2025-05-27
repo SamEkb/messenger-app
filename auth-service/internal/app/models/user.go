@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 )
 
@@ -35,6 +35,14 @@ func NewUser(id UserID, username string, email string, password []byte) (*User, 
 		email:    email,
 		password: string(password),
 	}, nil
+}
+
+func UserIDFromString(id string) (UserID, error) {
+	parsed, err := uuid.Parse(id)
+	if err != nil {
+		return UserID{}, errors.NewInvalidInputError("invalid user ID")
+	}
+	return UserID(parsed), nil
 }
 
 func (u UserID) IsEmpty() bool {

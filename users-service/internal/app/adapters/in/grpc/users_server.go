@@ -5,14 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/ports"
+	middlewaregrpc "github.com/SamEkb/messenger-app/users-service/internal/middleware/grpc"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -27,10 +28,10 @@ type UsersServiceServer struct {
 	userUseCase ports.UserUseCase
 	validator   protovalidate.Validator
 	cfg         *env.ServerConfig
-	logger      *slog.Logger
+	logger      logger.Logger
 }
 
-func NewServer(cfg *env.ServerConfig, userUseCase ports.UserUseCase, logger *slog.Logger) (*UsersServiceServer, error) {
+func NewServer(cfg *env.ServerConfig, userUseCase ports.UserUseCase, logger logger.Logger) (*UsersServiceServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize validator: %w", err)
@@ -65,6 +66,7 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 		grpcServer := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				protovalidatemw.UnaryServerInterceptor(s.validator),
+				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),
 		)
 		users.RegisterUsersServiceServer(grpcServer, s)

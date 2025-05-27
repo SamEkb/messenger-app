@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/SamEkb/messenger-app/friends-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 )
 
 type FriendshipUseCase interface {

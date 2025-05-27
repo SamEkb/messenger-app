@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -14,15 +15,11 @@ const (
 )
 
 type Config struct {
-	AppName    string
-	Debug      string
-	Server     *ServerConfig
-	Clients    *ClientsConfig
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
+	AppName string
+	Debug   string
+	Server  *ServerConfig
+	Clients *ClientsConfig
+	DB      *DBConfig
 }
 
 type ServerConfig struct {
@@ -35,6 +32,19 @@ type ServerConfig struct {
 type ClientsConfig struct {
 	Users   *ServiceClientConfig
 	Friends *ServiceClientConfig
+}
+
+type DBConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Name     string
+}
+
+func (db *DBConfig) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		db.User, db.Password, db.Host, db.Port, db.Name)
 }
 
 type ServiceClientConfig struct {
@@ -67,6 +77,7 @@ func LoadConfig() (*Config, error) {
 			Users:   &ServiceClientConfig{},
 			Friends: &ServiceClientConfig{},
 		},
+		DB: &DBConfig{},
 	}
 
 	c.Server.GRPCHost = getEnv("GRPC_HOST", "0.0.0.0")
@@ -76,6 +87,14 @@ func LoadConfig() (*Config, error) {
 
 	c.Clients.Users.Host = getEnv("USERS_SERVICE_HOST", "localhost")
 	c.Clients.Users.Port = getEnvAsInt("USERS_SERVICE_PORT", 9004)
+
+	c.DB = &DBConfig{
+		Host:     getEnv("POSTGRES_HOST", "localhost"),
+		Port:     getEnvAsInt("POSTGRES_PORT", 5432),
+		User:     getEnv("POSTGRES_USER", "root"),
+		Password: getEnv("POSTGRES_PASSWORD", "root"),
+		Name:     getEnv("POSTGRES_DB", "friends_db"),
+	}
 
 	return c, nil
 }

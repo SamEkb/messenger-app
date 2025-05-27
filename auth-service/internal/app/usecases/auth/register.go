@@ -5,8 +5,8 @@ import (
 
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
-	"github.com/SamEkb/messenger-app/auth-service/pkg/errors"
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -34,8 +34,14 @@ func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.
 		return models.UserID{}, err
 	}
 
-	if err = a.authRepo.Create(ctx, user); err != nil {
-		a.logger.Error("failed to save user", "error", err)
+	err = a.txManager.RunTx(ctx, func(txCtx context.Context) error {
+		if err := a.authRepo.Create(txCtx, user); err != nil {
+			a.logger.Error("failed to save user", "error", err)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return models.UserID{}, err
 	}
 
@@ -48,6 +54,7 @@ func (a *UseCase) Register(ctx context.Context, dto *ports.RegisterDto) (models.
 
 	if err = a.userEventPublisher.ProduceUserRegisteredEvent(ctx, event); err != nil {
 		a.logger.Warn("failed to publish user registration event", "error", err, "user_id", user.ID())
+		return models.UserID{}, err
 	}
 
 	a.logger.Info("user registered successfully", "user_id", user.ID(), "username", user.Username(), "email", user.Email())

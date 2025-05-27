@@ -2,25 +2,21 @@ package in_memory
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
-	"github.com/SamEkb/messenger-app/chat-service/pkg/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 )
 
 type ChatRepository struct {
 	mx       sync.Mutex
 	storage  map[models.ChatID]*models.Chat
 	messages map[models.ChatID][]*models.Message
-	logger   *slog.Logger
+	logger   logger.Logger
 }
 
-func NewChatRepository(logger *slog.Logger) *ChatRepository {
-	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(nil, nil))
-	}
-
+func NewChatRepository(logger logger.Logger) *ChatRepository {
 	return &ChatRepository{
 		storage:  make(map[models.ChatID]*models.Chat),
 		messages: make(map[models.ChatID][]*models.Message),
