@@ -16,7 +16,7 @@ import (
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
 	apperrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
-	"github.com/SamEkb/messenger-app/pkg/platform/tracing"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -73,8 +73,8 @@ func (s *Server) RunServers(ctx context.Context) error {
 		}
 
 		grpcServer := grpc.NewServer(
+			grpc.StatsHandler(tracing.GRPCServerHandler()),
 			grpc.ChainUnaryInterceptor(
-				tracing.GRPCServerInterceptor(),
 				panicRecoverer,
 				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
