@@ -2,18 +2,22 @@ package grpc
 
 import (
 	"context"
-	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
-	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
+	"errors"
 	"log"
 	"net"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/metrics"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	middlewaregrpc "github.com/SamEkb/messenger-app/chat-service/internal/middleware/grpc"
 	chat "github.com/SamEkb/messenger-app/pkg/api/chat_service/v1"
-	"github.com/SamEkb/messenger-app/pkg/platform/errors"
+	apperrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
@@ -33,7 +37,7 @@ type ChatServer struct {
 func NewChatServer(useCase ports.ChatUseCase, cfg *env.ServerConfig, logger logger.Logger) (*ChatServer, error) {
 	validator, err := protovalidate.New()
 	if err != nil {
-		return nil, errors.NewInternalError(err, "failed to initialize validator")
+		return nil, apperrors.NewInternalError(err, "failed to initialize validator")
 	}
 
 	return &ChatServer{
@@ -60,6 +64,34 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", metrics.Handler())
+		mux.Handle("/debug/pprof/", metrics.PprofHandler())
+
+		metricsServer := &http.Server{
+			Addr:    ":9090",
+			Handler: mux,
+		}
+
+		s.logger.Info("metrics and pprof server started", "address", ":9090")
+
+		go func() {
+			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				s.logger.Error("metrics server error", "error", err)
+			}
+		}()
+
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
+			s.logger.Error("metrics server shutdown error", "error", err)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
 		panicRecoverer := resilience.RecoveryInterceptor(s.logger)
 		rls := resilience.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
@@ -74,6 +106,7 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 			grpc.StatsHandler(tracing.GRPCServerHandler()),
 			grpc.ChainUnaryInterceptor(
 				panicRecoverer,
+				metrics.GRPCMetricsInterceptor("chat-service"),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
 				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 				rls.Interceptor(),

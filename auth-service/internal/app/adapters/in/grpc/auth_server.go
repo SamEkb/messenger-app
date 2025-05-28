@@ -3,11 +3,12 @@ package grpc
 import (
 	"context"
 	"errors"
-	"github.com/SamEkb/messenger-app/pkg/platform/middleware/metrics"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/metrics"
 
 	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
 

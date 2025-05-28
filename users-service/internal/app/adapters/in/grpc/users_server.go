@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
-	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	"log"
 	"net"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/metrics"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
@@ -62,6 +65,35 @@ func readyHandler(w http.ResponseWriter, _ *http.Request) {
 func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 	var wg sync.WaitGroup
 
+	// Start metrics server
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", metrics.Handler())
+		mux.Handle("/debug/pprof/", metrics.PprofHandler())
+
+		metricsServer := &http.Server{
+			Addr:    ":9090", // Standard metrics port
+			Handler: mux,
+		}
+
+		s.logger.Info("metrics and pprof server started", "address", ":9090")
+
+		go func() {
+			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				s.logger.Error("metrics server error", "error", err)
+			}
+		}()
+
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
+			s.logger.Error("metrics server shutdown error", "error", err)
+		}
+	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -78,6 +110,7 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 			grpc.StatsHandler(tracing.GRPCServerHandler()),
 			grpc.ChainUnaryInterceptor(
 				recoverer,
+				metrics.GRPCMetricsInterceptor("users-service"),
 				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
 				middlewaregrpc.ErrorsUnaryServerInterceptor(),
