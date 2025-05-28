@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	tr "github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	postgreslib "github.com/SamEkb/messenger-app/pkg/platform/postgres"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/SamEkb/messenger-app/users-service/internal/app/adapters/in/grpc"
@@ -28,6 +29,21 @@ func main() {
 
 	log := logger.NewLogger(config.Debug, config.AppName)
 	log.Info("starting users service")
+
+	tracingConfig := tr.LoadConfig()
+	tracingShutdown, err := tr.Initialize(tracingConfig)
+	if err != nil {
+		log.Fatal("failed to initialize tracing", "error", err)
+	}
+	defer func() {
+		if err := tracingShutdown(context.Background()); err != nil {
+			log.Error("failed to shutdown tracing", "error", err)
+		}
+	}()
+
+	if tracingConfig.Enabled {
+		log.Info("tracing initialized", "service", tracingConfig.ServiceName, "jaeger", tracingConfig.JaegerURL)
+	}
 
 	db, err := postgreslib.NewDB(config.DB.DSN())
 	if err != nil {

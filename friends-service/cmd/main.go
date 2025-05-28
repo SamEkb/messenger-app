@@ -13,6 +13,7 @@ import (
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/repositories/postgres"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/usecases/friendship"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	tr "github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	postgreslib "github.com/SamEkb/messenger-app/pkg/platform/postgres"
 	_ "github.com/lib/pq"
 )
@@ -28,6 +29,21 @@ func main() {
 
 	log := logger.NewLogger(cfg.Debug, cfg.AppName)
 	log.Info("starting friends service")
+
+	tracingConfig := tr.LoadConfig()
+	tracingShutdown, err := tr.Initialize(tracingConfig)
+	if err != nil {
+		log.Fatal("failed to initialize tracing", "error", err)
+	}
+	defer func() {
+		if err := tracingShutdown(context.Background()); err != nil {
+			log.Error("failed to shutdown tracing", "error", err)
+		}
+	}()
+
+	if tracingConfig.Enabled {
+		log.Info("tracing initialized", "service", tracingConfig.ServiceName, "jaeger", tracingConfig.JaegerURL)
+	}
 
 	db, err := postgreslib.NewDB(cfg.DB.DSN())
 	if err != nil {

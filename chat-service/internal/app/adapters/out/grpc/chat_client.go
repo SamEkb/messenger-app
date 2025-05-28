@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 
 	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
@@ -52,6 +53,7 @@ func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceCl
 		ctx,
 		f.config.Users.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(tracing.GRPCClientHandler()),
 		grpc.WithChainUnaryInterceptor(
 			clientInterceptor,
 			cbInterceptor,
@@ -96,6 +98,7 @@ func (f *Client) NewFriendsServiceClient(ctx context.Context) (ports.FriendServi
 		ctx,
 		f.config.Friends.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(tracing.GRPCClientHandler()),
 		grpc.WithChainUnaryInterceptor(
 			clientInterceptor,
 			cbInterceptor,

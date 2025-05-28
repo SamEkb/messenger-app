@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	"log"
 	"net"
 	"net/http"
@@ -71,6 +72,7 @@ func (s *FriendshipServiceServer) RunServers(ctx context.Context) error {
 		}
 
 		grpcServer := grpclib.NewServer(
+			grpclib.StatsHandler(tracing.GRPCServerHandler()),
 			grpclib.ChainUnaryInterceptor(
 				recoverer,
 				rls.Interceptor(),

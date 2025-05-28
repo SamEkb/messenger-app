@@ -14,6 +14,7 @@ import (
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/repositories/mongodb"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/usecases/chat"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	tr "github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	mongolib "github.com/SamEkb/messenger-app/pkg/platform/mongodb"
 )
 
@@ -27,6 +28,21 @@ func main() {
 
 	log := logger.NewLogger(config.Debug, config.AppName)
 	log.Info("starting chat service")
+
+	tracingConfig := tr.LoadConfig()
+	tracingShutdown, err := tr.Initialize(tracingConfig)
+	if err != nil {
+		log.Fatal("failed to initialize tracing", "error", err)
+	}
+	defer func() {
+		if err := tracingShutdown(context.Background()); err != nil {
+			log.Error("failed to shutdown tracing", "error", err)
+		}
+	}()
+
+	if tracingConfig.Enabled {
+		log.Info("tracing initialized", "service", tracingConfig.ServiceName, "jaeger", tracingConfig.JaegerURL)
+	}
 
 	mongoClient, err := mongolib.NewMongoClient(appCtx, config.MongoDB.URI)
 	if err != nil {

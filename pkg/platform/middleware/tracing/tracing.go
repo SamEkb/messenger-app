@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/stats"
 )
 
@@ -72,40 +71,27 @@ func Initialize(cfg Config) (func(context.Context) error, error) {
 	return tp.Shutdown, nil
 }
 
-func GinMiddleware(serviceName string) gin.HandlerFunc {
-	return otelgin.Middleware(serviceName)
-}
-
+// GRPCServerHandler returns a gRPC stats handler for server-side tracing
 func GRPCServerHandler() stats.Handler {
 	return otelgrpc.NewServerHandler()
 }
 
+// GRPCClientHandler returns a gRPC stats handler for client-side tracing
 func GRPCClientHandler() stats.Handler {
 	return otelgrpc.NewClientHandler()
 }
 
-func GRPCServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		// For new API, we should use stats handler instead
-		// This is a simple pass-through for compatibility
-		return handler(ctx, req)
-	}
-}
-
-func GRPCClientInterceptor() grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		// For new API, we should use stats handler instead
-		// This is a simple pass-through for compatibility
-		return invoker(ctx, method, req, reply, cc, opts...)
-	}
-}
-
+// HTTPClient returns an HTTP client with automatic tracing for outgoing requests
 func HTTPClient() *http.Client {
 	return &http.Client{
 		Transport: &tracedTransport{
 			base: http.DefaultTransport,
 		},
 	}
+}
+
+func GinMiddleware(serviceName string) gin.HandlerFunc {
+	return otelgin.Middleware(serviceName)
 }
 
 type tracedTransport struct {
