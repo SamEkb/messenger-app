@@ -11,6 +11,11 @@ const (
 	EnvProd  = "prod"
 )
 
+const (
+	FieldService     = "service"
+	FieldEnvironment = "environment"
+)
+
 type Logger interface {
 	Debug(msg string, args ...any)
 	Info(msg string, args ...any)
@@ -66,7 +71,12 @@ func NewLogger(env string, serviceName string) Logger {
 		logger = slog.New(slog.NewJSONHandler(os.Stdout, opts))
 	}
 
-	return &slogLogger{l: logger.With("service", serviceName)}
+	return &slogLogger{
+		l: logger.With(
+			FieldService, serviceName,
+			FieldEnvironment, env,
+		),
+	}
 }
 
 type MockLogger struct {
