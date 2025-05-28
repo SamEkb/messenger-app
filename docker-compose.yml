@@ -70,6 +70,7 @@ services:
     ports:
       - "8001:8001"
       - "9001:9001"
+      - "9090:9090"
     environment:
       - HTTP_PORT=8001
       - GRPC_PORT=9001
