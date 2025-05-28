@@ -2,6 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
+	"os"
+	"os/signal"
+	"syscall"
+
+	_ "github.com/lib/pq"
 
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/adapters/in/grpc"
@@ -13,8 +19,8 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	appCtx, cancelAppCtx := context.WithCancel(context.Background())
+	defer cancelAppCtx()
 
 	config, err := env.LoadConfig()
 	if err != nil {
@@ -29,8 +35,8 @@ func main() {
 		log.Fatal("failed to create DB connection", "error", err)
 	}
 	txManager := postgreslib.NewTxManager(db)
-	authRepository := postgres.NewAuthRepository(txManager, log)
-	tokenRepository := postgres.NewTokenRepository(txManager, log)
+	authRepository := postgres.NewAuthRepository(txManager, config.DB, log)
+	tokenRepository := postgres.NewTokenRepository(txManager, config.DB, log)
 
 	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
 	if err != nil {
@@ -52,7 +58,24 @@ func main() {
 		log.Fatal("failed to create grpc server", "error", err)
 	}
 
-	if err = server.RunServers(ctx); err != nil {
-		log.Fatal("failed to run grpc server", "error", err)
+	osSignals := make(chan os.Signal, 1)
+	signal.Notify(osSignals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-osSignals
+		log.Info("Received OS signal, initiating graceful shutdown...", "signal", sig.String())
+		cancelAppCtx()
+	}()
+
+	if runErr := server.RunServers(appCtx); runErr != nil {
+		if errors.Is(runErr, context.Canceled) {
+			log.Info("gRPC server shutdown gracefully: context canceled.")
+		} else {
+			log.Error("gRPC server failed or stopped unexpectedly", "error", runErr)
+		}
+	} else {
+		log.Info("gRPC server has shut down (RunServers returned nil).")
 	}
+
+	log.Info("Users service main function finished. Exiting.")
 }

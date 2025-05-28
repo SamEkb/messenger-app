@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"time"
 
+	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -14,18 +16,26 @@ var _ ports.AuthRepository = (*AuthRepository)(nil)
 
 type AuthRepository struct {
 	txManager *postgres.TxManager
+	db        *env.DBConfig
 	logger    logger.Logger
 }
 
-func NewAuthRepository(txManager *postgres.TxManager, logger logger.Logger) *AuthRepository {
+func NewAuthRepository(txManager *postgres.TxManager, db *env.DBConfig, logger logger.Logger) *AuthRepository {
 	return &AuthRepository{
 		txManager: txManager,
+		db:        db,
 		logger:    logger.With("component", "auth_repository"),
 	}
 }
 
 func (r *AuthRepository) Create(ctx context.Context, user *models.User) error {
 	r.logger.Debug("attempting to create new user", "user_id", user.ID(), "email", user.Email())
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	_, err := q.ExecContext(ctx, `
@@ -44,6 +54,13 @@ func (r *AuthRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *AuthRepository) FindUserByID(ctx context.Context, userID models.UserID) (*models.User, error) {
 	r.logger.Debug("looking for user by ID", "user_id", userID)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	var user struct {
 		ID       string `db:"id"`
@@ -69,6 +86,13 @@ func (r *AuthRepository) FindUserByID(ctx context.Context, userID models.UserID)
 
 func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	r.logger.Debug("looking for user by email", "email", email)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	var user struct {
 		ID       string `db:"id"`
@@ -95,6 +119,13 @@ func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (*mo
 
 func (r *AuthRepository) Update(ctx context.Context, user *models.User) error {
 	r.logger.Debug("attempting to update user", "user_id", user.ID())
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	_, err := q.ExecContext(ctx, `
 		UPDATE users SET username = $1, email = $2, password = $3 WHERE id = $4

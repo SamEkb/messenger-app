@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/SamEkb/messenger-app/friends-service/config/env"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -16,18 +17,26 @@ var _ ports.FriendshipRepository = (*FriendshipRepository)(nil)
 
 type FriendshipRepository struct {
 	txManager *postgres.TxManager
+	db        *env.DBConfig
 	logger    logger.Logger
 }
 
-func NewFriendshipRepository(txManager *postgres.TxManager, logger logger.Logger) *FriendshipRepository {
+func NewFriendshipRepository(txManager *postgres.TxManager, db *env.DBConfig, logger logger.Logger) *FriendshipRepository {
 	return &FriendshipRepository{
 		txManager: txManager,
+		db:        db,
 		logger:    logger.With("component", "friendship_repository"),
 	}
 }
 
 func (r *FriendshipRepository) GetFriends(ctx context.Context, userID string) ([]*models.Friendship, error) {
 	r.logger.Debug("getting friends", "user_id", userID)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	var friendships []struct {
@@ -67,6 +76,12 @@ func (r *FriendshipRepository) GetFriends(ctx context.Context, userID string) ([
 func (r *FriendshipRepository) SendFriendRequest(ctx context.Context, requestorID, recipientID string) error {
 	r.logger.Debug("sending friend request", "requestor_id", requestorID, "recipient_id", recipientID)
 
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	if requestorID == recipientID {
 		return errors.NewInvalidInputError("cannot send friend request to yourself")
 	}
@@ -95,6 +110,12 @@ func (r *FriendshipRepository) SendFriendRequest(ctx context.Context, requestorI
 
 func (r *FriendshipRepository) AcceptFriendRequest(ctx context.Context, recipientID, requestorID string) error {
 	r.logger.Debug("accepting friend request", "recipient_id", recipientID, "requestor_id", requestorID)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	var friendship struct {
@@ -150,6 +171,12 @@ func (r *FriendshipRepository) AcceptFriendRequest(ctx context.Context, recipien
 func (r *FriendshipRepository) RejectFriendRequest(ctx context.Context, recipientID, requestorID string) error {
 	r.logger.Debug("rejecting friend request", "recipient_id", recipientID, "requestor_id", requestorID)
 
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	var friendship struct {
 		ID          string    `db:"id"`
@@ -203,6 +230,12 @@ func (r *FriendshipRepository) RejectFriendRequest(ctx context.Context, recipien
 
 func (r *FriendshipRepository) Delete(ctx context.Context, userID string, friendID string) error {
 	r.logger.Debug("deleting friendship", "user_id", userID, "friend_id", friendID)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
 
 	q := r.txManager.GetQueryEngine(ctx)
 	result, err := q.ExecContext(ctx, `

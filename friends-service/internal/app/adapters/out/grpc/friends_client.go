@@ -8,6 +8,7 @@ import (
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -25,10 +26,36 @@ func NewClient(config *env.ClientsConfig, logger logger.Logger) *Client {
 }
 
 func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceClient, error) {
+	clientInterceptor := mw.NewClientInterceptor(
+		f.logger,
+		f.config.RateLimit.DefaultLimit,
+		f.config.RateLimit.DefaultBurst,
+	)
+	cbInterceptor := mw.NewCircuitBreakerInterceptor(
+		f.logger,
+		mw.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
+		mw.WithInterval(f.config.CircuitBreaker.Interval),
+		mw.WithTimeout(f.config.CircuitBreaker.Timeout),
+		mw.WithName(f.config.CircuitBreaker.Name),
+		mw.WithMaxRequests(f.config.CircuitBreaker.MaxRequests),
+		mw.WithMinRequests(f.config.CircuitBreaker.MinRequests),
+		mw.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
+	)
+	retryInterceptor := mw.RetryUnaryClientInterceptor(
+		f.config.RetryConfig.MaxRetries,
+		f.config.RetryConfig.RetryDelay,
+		f.logger,
+	)
+
 	conn, err := grpc.DialContext(
 		ctx,
 		f.config.Users.Addr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(
+			clientInterceptor,
+			cbInterceptor,
+			retryInterceptor,
+		),
 	)
 	if err != nil {
 		return nil, errors.NewServiceError(err, "failed to connect to Users Service")

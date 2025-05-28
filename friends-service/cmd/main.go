@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/SamEkb/messenger-app/friends-service/config/env"
 	grpcserver "github.com/SamEkb/messenger-app/friends-service/internal/app/adapters/in/grpc"
@@ -14,8 +18,8 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	appCtx, cancelAppCtx := context.WithCancel(context.Background())
+	defer cancelAppCtx()
 
 	cfg, err := env.LoadConfig()
 	if err != nil {
@@ -31,10 +35,10 @@ func main() {
 	}
 	txManager := postgreslib.NewTxManager(db)
 
-	repository := postgres.NewFriendshipRepository(txManager, log)
+	repository := postgres.NewFriendshipRepository(txManager, cfg.DB, log)
 
 	client := grpcclient.NewClient(cfg.Clients, log)
-	usersClient, err := client.NewUsersServiceClient(ctx)
+	usersClient, err := client.NewUsersServiceClient(appCtx)
 	if err != nil {
 		log.Fatal("failed to create Users Service client", "error", err)
 	}
@@ -45,8 +49,24 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to create grpc server", "error", err)
 	}
+	osSignals := make(chan os.Signal, 1)
+	signal.Notify(osSignals, syscall.SIGINT, syscall.SIGTERM)
 
-	if err = server.RunServers(ctx); err != nil {
-		log.Fatal("failed to run grpc server", "error", err)
+	go func() {
+		sig := <-osSignals
+		log.Info("Received OS signal, initiating graceful shutdown...", "signal", sig.String())
+		cancelAppCtx()
+	}()
+
+	if runErr := server.RunServers(appCtx); runErr != nil {
+		if errors.Is(runErr, context.Canceled) {
+			log.Info("gRPC server shutdown gracefully: context canceled.")
+		} else {
+			log.Error("gRPC server failed or stopped unexpectedly", "error", runErr)
+		}
+	} else {
+		log.Info("gRPC server has shut down (RunServers returned nil).")
 	}
+
+	log.Info("Users service main function finished. Exiting.")
 }

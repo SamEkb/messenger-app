@@ -2,8 +2,8 @@ package grpc
 
 import (
 	"context"
-	"time"
 
+	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -14,6 +14,7 @@ import (
 type FriendsServiceClientAdapter struct {
 	client friends.FriendsServiceClient
 	conn   *grpc.ClientConn
+	config *env.ClientsConfig
 }
 
 func (c *FriendsServiceClientAdapter) Close() error {
@@ -25,8 +26,8 @@ func (c *FriendsServiceClientAdapter) Close() error {
 	return nil
 }
 
-func (c *FriendsServiceClientAdapter) CheckFriendsStatus(userID1, userID2 string) (friends.FriendshipStatus, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (c *FriendsServiceClientAdapter) CheckFriendsStatus(ctx context.Context, userID1, userID2 string) (friends.FriendshipStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.config.FriendsClientTimeout)
 	defer cancel()
 
 	req := &friends.CheckFriendshipStatusRequest{

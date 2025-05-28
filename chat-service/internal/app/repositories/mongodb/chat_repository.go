@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -19,6 +20,7 @@ var _ ports.ChatRepository = (*ChatRepository)(nil)
 type ChatRepository struct {
 	db     *mongo.Database
 	logger logger.Logger
+	config *env.MongoDBConfig
 }
 
 type chatDocument struct {
@@ -36,8 +38,8 @@ type msgDocument struct {
 	Timestamp time.Time `bson:"timestamp"`
 }
 
-func NewChatRepository(client *mongo.Client, dbName string, logger logger.Logger) *ChatRepository {
-	db := client.Database(dbName)
+func NewChatRepository(client *mongo.Client, dbCfg *env.MongoDBConfig, logger logger.Logger) *ChatRepository {
+	db := client.Database(dbCfg.URI)
 
 	_, err := db.Collection("chats").Indexes().CreateOne(
 		context.Background(),
@@ -54,10 +56,18 @@ func NewChatRepository(client *mongo.Client, dbName string, logger logger.Logger
 	return &ChatRepository{
 		db:     db,
 		logger: logger.With("component", "chat_repository"),
+		config: dbCfg,
 	}
 }
 
 func (r *ChatRepository) Create(ctx context.Context, participants []string) (*models.Chat, error) {
+	timeout := r.config.Timeout
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("creating chat", "participants", participants)
 
 	chat, err := models.NewChat(participants)
@@ -85,6 +95,13 @@ func (r *ChatRepository) Create(ctx context.Context, participants []string) (*mo
 }
 
 func (r *ChatRepository) Get(ctx context.Context, userID string) ([]*models.Chat, error) {
+	timeout := r.config.Timeout
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("getting chats", "user_id", userID)
 
 	filter := bson.M{"participants": userID}
@@ -116,6 +133,12 @@ func (r *ChatRepository) Get(ctx context.Context, userID string) ([]*models.Chat
 }
 
 func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, authorID, content string) (*models.Message, error) {
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.config.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.config.Timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("sending message", "chat_id", chatID, "author_id", authorID)
 
 	message, err := models.NewMessage(authorID, content)
@@ -153,6 +176,13 @@ func (r *ChatRepository) SendMessage(ctx context.Context, chatID models.ChatID, 
 }
 
 func (r *ChatRepository) GetMessages(ctx context.Context, chatID models.ChatID) ([]*models.Message, error) {
+	timeout := r.config.Timeout
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	r.logger.Debug("getting messages", "chat_id", chatID)
 
 	filter := bson.M{"_id": chatID.String()}
