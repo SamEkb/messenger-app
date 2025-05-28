@@ -115,28 +115,15 @@ func LoadConfig() (*Config, error) {
 	c := &Config{
 		AppName: getEnv("APP_NAME", "FriendsService"),
 		Debug:   getEnv("DEBUG", "dev"),
-		Server:  &ServerConfig{},
-		Clients: &ClientsConfig{
-			Users:   &ServiceClientConfig{},
-			Friends: &ServiceClientConfig{},
+		Server:  serverConfig(),
+		Clients: clientsConfig(),
+		DB: &DBConfig{
+			Host:     getEnv("POSTGRES_HOST", "localhost"),
+			Port:     getEnvAsInt("POSTGRES_PORT", 5432),
+			User:     getEnv("POSTGRES_USER", "root"),
+			Password: getEnv("POSTGRES_PASSWORD", "root"),
+			Name:     getEnv("POSTGRES_DB", "friends_db"),
 		},
-		DB: &DBConfig{},
-	}
-
-	c.Server.GRPCHost = getEnv("GRPC_HOST", "0.0.0.0")
-	c.Server.GRPCPort = getEnvAsInt("GRPC_PORT", DefaultGRPCPort)
-	c.Server.HTTPHost = getEnv("HTTP_HOST", "0.0.0.0")
-	c.Server.HTTPPort = getEnvAsInt("HTTP_PORT", DefaultHTTPPort)
-
-	c.Clients.Users.Host = getEnv("USERS_SERVICE_HOST", "localhost")
-	c.Clients.Users.Port = getEnvAsInt("USERS_SERVICE_PORT", 9004)
-
-	c.DB = &DBConfig{
-		Host:     getEnv("POSTGRES_HOST", "localhost"),
-		Port:     getEnvAsInt("POSTGRES_PORT", 5432),
-		User:     getEnv("POSTGRES_USER", "root"),
-		Password: getEnv("POSTGRES_PASSWORD", "root"),
-		Name:     getEnv("POSTGRES_DB", "friends_db"),
 	}
 
 	return c, nil

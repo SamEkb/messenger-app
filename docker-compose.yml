@@ -135,7 +135,8 @@ services:
     environment:
       - HTTP_PORT=8003
       - GRPC_PORT=9003
-      - USERS_SERVICE_ADDR=users-service:9004
+      - USERS_SERVICE_HOST=users-service
+      - USERS_SERVICE_PORT=9004
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
@@ -166,12 +167,12 @@ services:
     environment:
       - HTTP_PORT=8002
       - GRPC_PORT=9002
-      - USERS_SERVICE_ADDR=users-service:9004
-      - FRIENDS_SERVICE_ADDR=friends-service:9003
-      - MONGO_HOST=mongo
-      - MONGO_USER=root
-      - MONGO_PASSWORD=root
-      - MONGO_DB=chat_db
+      - USERS_SERVICE_HOST=users-service
+      - USERS_SERVICE_PORT=9004
+      - FRIENDS_SERVICE_HOST=friends-service
+      - FRIENDS_SERVICE_PORT=9003
+      - MONGODB_URI=mongodb://root:root@mongo:27017
+      - MONGODB_DATABASE=chat_db
       # Tracing
       - OTEL_SERVICE_NAME=chat-service
       - OTEL_SERVICE_VERSION=1.0.0
