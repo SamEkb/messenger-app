@@ -65,7 +65,6 @@ func readyHandler(w http.ResponseWriter, _ *http.Request) {
 func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 	var wg sync.WaitGroup
 
-	// Start metrics server
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -74,15 +73,15 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 		mux.Handle("/debug/pprof/", metrics.PprofHandler())
 
 		metricsServer := &http.Server{
-			Addr:    ":9090", // Standard metrics port
+			Addr:    ":9090",
 			Handler: mux,
 		}
 
-		s.logger.Info("metrics and pprof server started", "address", ":9090")
+		s.logger.InfoContext(ctx, "metrics and pprof server started", "address", ":9090")
 
 		go func() {
 			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				s.logger.Error("metrics server error", "error", err)
+				s.logger.ErrorContext(ctx, "metrics server error", "error", err)
 			}
 		}()
 
@@ -90,7 +89,7 @@ func (s *UsersServiceServer) RunServers(ctx context.Context) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
-			s.logger.Error("metrics server shutdown error", "error", err)
+			s.logger.ErrorContext(ctx, "metrics server shutdown error", "error", err)
 		}
 	}()
 

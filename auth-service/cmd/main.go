@@ -34,7 +34,8 @@ func main() {
 	tracingConfig := tr.LoadConfig()
 	tracingShutdown, err := tr.Initialize(tracingConfig)
 	if err != nil {
-		log.Fatal("failed to initialize tracing", "error", err)
+		log.ErrorContext(appCtx, "failed to initialize tracing", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if err := tracingShutdown(context.Background()); err != nil {
@@ -48,7 +49,8 @@ func main() {
 
 	db, err := postgreslib.NewDB(config.DB.DSN())
 	if err != nil {
-		log.Fatal("failed to create DB connection", "error", err)
+		log.ErrorContext(appCtx, "failed to create DB connection", "error", err)
+		os.Exit(1)
 	}
 	txManager := postgreslib.NewTxManager(db)
 	authRepository := postgres.NewAuthRepository(txManager, config.DB, log)
@@ -56,7 +58,8 @@ func main() {
 
 	userEventPublisher, err := kafka.NewUserEventsKafkaProducer(config.Kafka, log)
 	if err != nil {
-		log.Fatal("failed to create Kafka producer", "error", err)
+		log.ErrorContext(appCtx, "failed to create Kafka producer", "error", err)
+		os.Exit(1)
 	}
 	defer userEventPublisher.Close()
 
@@ -71,7 +74,8 @@ func main() {
 
 	server, err := grpc.NewServer(config.Server, usecase, log)
 	if err != nil {
-		log.Fatal("failed to create grpc server", "error", err)
+		log.ErrorContext(appCtx, "failed to create grpc server", "error", err)
+		os.Exit(1)
 	}
 
 	osSignals := make(chan os.Signal, 1)
@@ -93,5 +97,5 @@ func main() {
 		log.Info("gRPC server has shut down (RunServers returned nil).")
 	}
 
-	log.Info("Users service main function finished. Exiting.")
+	log.Info("Auth service main function finished. Exiting.")
 }

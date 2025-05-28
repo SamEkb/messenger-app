@@ -32,7 +32,8 @@ func main() {
 	tracingConfig := tr.LoadConfig()
 	tracingShutdown, err := tr.Initialize(tracingConfig)
 	if err != nil {
-		log.Fatal("failed to initialize tracing", "error", err)
+		log.ErrorContext(appCtx, "failed to initialize tracing", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if err := tracingShutdown(context.Background()); err != nil {
@@ -46,7 +47,8 @@ func main() {
 
 	mongoClient, err := mongolib.NewMongoClient(appCtx, config.MongoDB.URI)
 	if err != nil {
-		log.Fatal("failed to connect to MongoDB", "error", err)
+		log.ErrorContext(appCtx, "failed to connect to MongoDB", "error", err)
+		os.Exit(1)
 	}
 
 	defer func() {
@@ -66,11 +68,13 @@ func main() {
 
 	usersClient, err := client.NewUsersServiceClient(appCtx)
 	if err != nil {
-		log.Fatal("failed to create Users Service client", "error", err)
+		log.ErrorContext(appCtx, "failed to create Users Service client", "error", err)
+		os.Exit(1)
 	}
 	friendsClient, err := client.NewFriendsServiceClient(appCtx)
 	if err != nil {
-		log.Fatal("failed to create Friends Service client", "error", err)
+		log.ErrorContext(appCtx, "failed to create Friends Service client", "error", err)
+		os.Exit(1)
 	}
 
 	defer func() {
@@ -95,7 +99,8 @@ func main() {
 
 	server, err := grpcserver.NewChatServer(chatUseCase, config.Server, log)
 	if err != nil {
-		log.Fatal("failed to create grpc server", "error", err)
+		log.ErrorContext(appCtx, "failed to create grpc server", "error", err)
+		os.Exit(1)
 	}
 
 	osSignals := make(chan os.Signal, 1)

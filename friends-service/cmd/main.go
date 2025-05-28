@@ -33,7 +33,8 @@ func main() {
 	tracingConfig := tr.LoadConfig()
 	tracingShutdown, err := tr.Initialize(tracingConfig)
 	if err != nil {
-		log.Fatal("failed to initialize tracing", "error", err)
+		log.ErrorContext(appCtx, "failed to initialize tracing", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if err := tracingShutdown(context.Background()); err != nil {
@@ -47,7 +48,8 @@ func main() {
 
 	db, err := postgreslib.NewDB(cfg.DB.DSN())
 	if err != nil {
-		log.Fatal("failed to create DB connection", "error", err)
+		log.ErrorContext(appCtx, "failed to create DB connection", "error", err)
+		os.Exit(1)
 	}
 	txManager := postgreslib.NewTxManager(db)
 
@@ -56,14 +58,16 @@ func main() {
 	client := grpcclient.NewClient(cfg.Clients, log)
 	usersClient, err := client.NewUsersServiceClient(appCtx)
 	if err != nil {
-		log.Fatal("failed to create Users Service client", "error", err)
+		log.ErrorContext(appCtx, "failed to create Users Service client", "error", err)
+		os.Exit(1)
 	}
 
 	useCase := friendship.NewUseCase(repository, usersClient, txManager, log)
 
 	server, err := grpcserver.NewServer(cfg.Server, useCase, log)
 	if err != nil {
-		log.Fatal("failed to create grpc server", "error", err)
+		log.ErrorContext(appCtx, "failed to create grpc server", "error", err)
+		os.Exit(1)
 	}
 	osSignals := make(chan os.Signal, 1)
 	signal.Notify(osSignals, syscall.SIGINT, syscall.SIGTERM)
@@ -84,5 +88,5 @@ func main() {
 		log.Info("gRPC server has shut down (RunServers returned nil).")
 	}
 
-	log.Info("Users service main function finished. Exiting.")
+	log.Info("Friends service main function finished. Exiting.")
 }

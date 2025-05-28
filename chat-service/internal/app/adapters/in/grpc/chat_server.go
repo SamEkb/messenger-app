@@ -73,11 +73,11 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 			Handler: mux,
 		}
 
-		s.logger.Info("metrics and pprof server started", "address", ":9090")
+		s.logger.InfoContext(ctx, "metrics and pprof server started", "address", ":9090")
 
 		go func() {
 			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				s.logger.Error("metrics server error", "error", err)
+				s.logger.ErrorContext(ctx, "metrics server error", "error", err)
 			}
 		}()
 
@@ -85,15 +85,14 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
-			s.logger.Error("metrics server shutdown error", "error", err)
+			s.logger.ErrorContext(ctx, "metrics server shutdown error", "error", err)
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
-		panicRecoverer := resilience.RecoveryInterceptor(s.logger)
+		recoverer := resilience.RecoveryInterceptor(s.logger)
 		rls := resilience.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
 		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
 			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
@@ -105,11 +104,11 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 		grpcServer := grpc.NewServer(
 			grpc.StatsHandler(tracing.GRPCServerHandler()),
 			grpc.ChainUnaryInterceptor(
-				panicRecoverer,
+				recoverer,
 				metrics.GRPCMetricsInterceptor("chat-service"),
+				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
 				middlewaregrpc.ErrorsUnaryServerInterceptor(),
-				rls.Interceptor(),
 			),
 		)
 		chat.RegisterChatServiceServer(grpcServer, s)

@@ -33,7 +33,8 @@ func main() {
 	tracingConfig := tr.LoadConfig()
 	tracingShutdown, err := tr.Initialize(tracingConfig)
 	if err != nil {
-		log.Fatal("failed to initialize tracing", "error", err)
+		log.ErrorContext(appCtx, "failed to initialize tracing", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if err := tracingShutdown(context.Background()); err != nil {
@@ -47,7 +48,8 @@ func main() {
 
 	db, err := postgreslib.NewDB(config.DB.DSN())
 	if err != nil {
-		log.Fatal("failed to create DB connection", "error", err)
+		log.ErrorContext(appCtx, "failed to create DB connection", "error", err)
+		os.Exit(1)
 	}
 	txManager := postgreslib.NewTxManager(db)
 
@@ -58,17 +60,20 @@ func main() {
 
 	consumer, err := kafka.NewConsumerWithConfig(kafkaServer, config.Kafka)
 	if err != nil {
-		log.Fatal("failed to create Kafka consumer", "error", err)
+		log.ErrorContext(appCtx, "failed to create Kafka consumer", "error", err)
+		os.Exit(1)
 	}
 
 	if err := consumer.Start(appCtx); err != nil {
-		log.Fatal("failed to start Kafka consumer", "error", err)
+		log.ErrorContext(appCtx, "failed to start Kafka consumer", "error", err)
+		os.Exit(1)
 	}
 	defer consumer.Close()
 
 	grpcServer, err := grpc.NewServer(config.Server, userUseCase, log)
 	if err != nil {
-		log.Fatal("failed to create grpc server", "error", err)
+		log.ErrorContext(appCtx, "failed to create grpc server", "error", err)
+		os.Exit(1)
 	}
 
 	osSignals := make(chan os.Signal, 1)
