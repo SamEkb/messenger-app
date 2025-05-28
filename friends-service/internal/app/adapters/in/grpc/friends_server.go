@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
 	"log"
 	"net"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/ports"
 	friends "github.com/SamEkb/messenger-app/pkg/api/friends_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
-	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -61,8 +61,8 @@ func (s *FriendshipServiceServer) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		recoverer := mw.RecoveryInterceptor(s.logger)
-		rls := mw.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		recoverer := resilience.RecoveryInterceptor(s.logger)
+		rls := resilience.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
 		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
 			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
 		}

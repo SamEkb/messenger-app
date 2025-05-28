@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
 	"log"
 	"net"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	chat "github.com/SamEkb/messenger-app/pkg/api/chat_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
-	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"github.com/bufbuild/protovalidate-go"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -60,8 +60,8 @@ func (s *ChatServer) RunServers(ctx context.Context) error {
 	go func() {
 		defer wg.Done()
 
-		panicRecoverer := mw.RecoveryInterceptor(s.logger)
-		rls := mw.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		panicRecoverer := resilience.RecoveryInterceptor(s.logger)
+		rls := resilience.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
 		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
 			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
 		}

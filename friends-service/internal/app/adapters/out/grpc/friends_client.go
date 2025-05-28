@@ -2,13 +2,13 @@ package grpc
 
 import (
 	"context"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
 
 	"github.com/SamEkb/messenger-app/friends-service/config/env"
 	"github.com/SamEkb/messenger-app/friends-service/internal/app/ports"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
-	mw "github.com/SamEkb/messenger-app/pkg/platform/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -26,22 +26,22 @@ func NewClient(config *env.ClientsConfig, logger logger.Logger) *Client {
 }
 
 func (f *Client) NewUsersServiceClient(ctx context.Context) (ports.UserServiceClient, error) {
-	clientInterceptor := mw.NewClientInterceptor(
+	clientInterceptor := resilience.NewClientInterceptor(
 		f.logger,
 		f.config.RateLimit.DefaultLimit,
 		f.config.RateLimit.DefaultBurst,
 	)
-	cbInterceptor := mw.NewCircuitBreakerInterceptor(
+	cbInterceptor := resilience.NewCircuitBreakerInterceptor(
 		f.logger,
-		mw.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
-		mw.WithInterval(f.config.CircuitBreaker.Interval),
-		mw.WithTimeout(f.config.CircuitBreaker.Timeout),
-		mw.WithName(f.config.CircuitBreaker.Name),
-		mw.WithMaxRequests(f.config.CircuitBreaker.MaxRequests),
-		mw.WithMinRequests(f.config.CircuitBreaker.MinRequests),
-		mw.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
+		resilience.WithFailureRatio(f.config.CircuitBreaker.FailureRatio),
+		resilience.WithInterval(f.config.CircuitBreaker.Interval),
+		resilience.WithTimeout(f.config.CircuitBreaker.Timeout),
+		resilience.WithName(f.config.CircuitBreaker.Name),
+		resilience.WithMaxRequests(f.config.CircuitBreaker.MaxRequests),
+		resilience.WithMinRequests(f.config.CircuitBreaker.MinRequests),
+		resilience.WithServerErrorCodes(f.config.CircuitBreaker.ServerErrorCodes),
 	)
-	retryInterceptor := mw.RetryUnaryClientInterceptor(
+	retryInterceptor := resilience.RetryUnaryClientInterceptor(
 		f.config.RetryConfig.MaxRetries,
 		f.config.RetryConfig.RetryDelay,
 		f.logger,
