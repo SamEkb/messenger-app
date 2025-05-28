@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/SamEkb/messenger-app/pkg/api/events/v1"
+	"github.com/SamEkb/messenger-app/pkg/platform/logger"
 	"github.com/SamEkb/messenger-app/users-service/config/env"
 	"github.com/Shopify/sarama"
 )
@@ -27,6 +27,7 @@ type Consumer struct {
 	topics        []string
 	ready         chan bool
 	canceller     func()
+	log           logger.Logger
 }
 
 func NewConsumerWithConfig(handler EventHandler, kafkaConfig *env.KafkaConfig) (*Consumer, error) {
@@ -49,39 +50,41 @@ func NewConsumerWithConfig(handler EventHandler, kafkaConfig *env.KafkaConfig) (
 		handler:       handler,
 		topics:        []string{kafkaConfig.Topic},
 		ready:         make(chan bool),
+		log:           logger.NewLogger("dev", "users-kafka-consumer"),
 	}, nil
 }
 
 type consumerGroupHandler struct {
 	handler EventHandler
 	ready   chan bool
+	log     logger.Logger
 }
 
 func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error {
-	log.Printf("Consumer group session setup: member ID = %s", session.MemberID())
+	h.log.InfoContext(session.Context(), "Consumer group session setup", "member_id", session.MemberID())
 	close(h.ready)
 	return nil
 }
 
 func (h *consumerGroupHandler) Cleanup(session sarama.ConsumerGroupSession) error {
-	log.Printf("Consumer group session cleanup: member ID = %s", session.MemberID())
+	h.log.InfoContext(session.Context(), "Consumer group session cleanup", "member_id", session.MemberID())
 	return nil
 }
 
 func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		log.Printf("Received message from topic %s, partition %d, offset %d",
-			msg.Topic, msg.Partition, msg.Offset)
+		h.log.InfoContext(session.Context(), "Received message from topic",
+			"topic", msg.Topic, "partition", msg.Partition, "offset", msg.Offset)
 
 		if msg.Topic == userEventsTopic {
 			var event events.UserRegisteredEvent
 			if err := json.Unmarshal(msg.Value, &event); err != nil {
-				log.Printf("Failed to unmarshal user event: %v", err)
+				h.log.ErrorContext(session.Context(), "Failed to unmarshal user event", "error", err)
 				continue
 			}
 
 			if err := h.handler.HandleUserRegistered(session.Context(), &event); err != nil {
-				log.Printf("Error handling message: %v", err)
+				h.log.ErrorContext(session.Context(), "Error handling message", "error", err)
 				continue
 			}
 		}
@@ -98,17 +101,18 @@ func (c *Consumer) Start(ctx context.Context) error {
 	handler := &consumerGroupHandler{
 		handler: c.handler,
 		ready:   c.ready,
+		log:     c.log,
 	}
 
 	go func() {
 		for {
 			err := c.consumerGroup.Consume(ctx, c.topics, handler)
 			if err != nil {
-				log.Printf("Error from consumer group: %v", err)
+				c.log.ErrorContext(ctx, "Error from consumer group", "error", err)
 			}
 
 			if ctx.Err() != nil {
-				log.Println("Context cancelled, stopping consumer")
+				c.log.InfoContext(ctx, "Context cancelled, stopping consumer")
 				return
 			}
 
@@ -118,7 +122,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 	}()
 
 	<-c.ready
-	log.Println("Kafka consumer started")
+	c.log.InfoContext(ctx, "Kafka consumer started")
 	return nil
 }
 

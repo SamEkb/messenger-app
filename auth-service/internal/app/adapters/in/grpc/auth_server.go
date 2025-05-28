@@ -8,6 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/metrics"
+
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/resilience"
+
 	"buf.build/go/protovalidate"
 	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
@@ -15,6 +19,7 @@ import (
 	auth "github.com/SamEkb/messenger-app/pkg/api/auth_service/v1"
 	apperrors "github.com/SamEkb/messenger-app/pkg/platform/errors"
 	"github.com/SamEkb/messenger-app/pkg/platform/logger"
+	"github.com/SamEkb/messenger-app/pkg/platform/middleware/tracing"
 	protovalidatemw "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -61,8 +66,49 @@ func (s *Server) RunServers(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", metrics.Handler())
+		mux.Handle("/debug/pprof/", metrics.PprofHandler())
+
+		metricsServer := &http.Server{
+			Addr:    ":9090",
+			Handler: mux,
+		}
+
+		s.logger.Info("metrics and pprof server started", "address", ":9090")
+
+		go func() {
+			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				s.logger.Error("metrics server error", "error", err)
+			}
+		}()
+
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
+			s.logger.Error("metrics server shutdown error", "error", err)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		panicRecoverer := resilience.RecoveryInterceptor(s.logger)
+		rls := resilience.NewServerInterceptor(s.logger, s.cfg.RateLimiter.DefaultLimit, s.cfg.RateLimiter.DefaultBurst)
+		if s.cfg.RateLimiter.GlobalLimit > 0 && s.cfg.RateLimiter.GlobalBurst > 0 {
+			rls = rls.WithGlobalLimit(s.cfg.RateLimiter.GlobalLimit, s.cfg.RateLimiter.GlobalBurst)
+		}
+		for method, lim := range s.cfg.RateLimiter.MethodLimits {
+			rls = rls.WithMethodLimit(method, lim.Limit, lim.Burst)
+		}
+
 		grpcServer := grpc.NewServer(
+			grpc.StatsHandler(tracing.GRPCServerHandler()),
 			grpc.ChainUnaryInterceptor(
+				panicRecoverer,
+				metrics.GRPCMetricsInterceptor("auth-service"),
+				rls.Interceptor(),
 				protovalidatemw.UnaryServerInterceptor(s.validator),
 				middlewaregrpc.ErrorsUnaryServerInterceptor(),
 			),

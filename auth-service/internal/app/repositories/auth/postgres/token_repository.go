@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/SamEkb/messenger-app/auth-service/config/env"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/models"
 	"github.com/SamEkb/messenger-app/auth-service/internal/app/ports"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -16,14 +17,26 @@ var _ ports.TokenRepository = (*TokenRepository)(nil)
 type TokenRepository struct {
 	txManager *postgres.TxManager
 	logger    logger.Logger
+	db        *env.DBConfig
 }
 
-func NewTokenRepository(txManager *postgres.TxManager, logger logger.Logger) *TokenRepository {
-	return &TokenRepository{txManager: txManager, logger: logger.With("component", "token_repository")}
+func NewTokenRepository(txManager *postgres.TxManager, db *env.DBConfig, logger logger.Logger) *TokenRepository {
+	return &TokenRepository{
+		txManager: txManager,
+		db:        db,
+		logger:    logger.With("component", "token_repository"),
+	}
 }
 
 func (r *TokenRepository) Create(ctx context.Context, token *models.AuthToken) (*models.AuthToken, error) {
 	r.logger.Debug("attempting to create token", "token", token.Token(), "user_id", token.UserID())
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	_, err := q.ExecContext(ctx, `
 		INSERT INTO tokens (token, user_id, expires_at)
@@ -39,6 +52,13 @@ func (r *TokenRepository) Create(ctx context.Context, token *models.AuthToken) (
 
 func (r *TokenRepository) FindToken(ctx context.Context, token string) (models.Token, error) {
 	r.logger.Debug("looking for token", "token", token)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	var t string
 	err := q.GetContext(ctx, &t, `
@@ -54,6 +74,13 @@ func (r *TokenRepository) FindToken(ctx context.Context, token string) (models.T
 
 func (r *TokenRepository) ValidateToken(ctx context.Context, token string) (bool, error) {
 	r.logger.Debug("validating token", "token", token)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	var expiresAt time.Time
 	err := q.GetContext(ctx, &expiresAt, `
@@ -73,6 +100,13 @@ func (r *TokenRepository) ValidateToken(ctx context.Context, token string) (bool
 
 func (r *TokenRepository) DeleteToken(ctx context.Context, token models.Token) error {
 	r.logger.Debug("attempting to delete token", "token", token)
+
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > r.db.Timeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, r.db.Timeout)
+		defer cancel()
+	}
+
 	q := r.txManager.GetQueryEngine(ctx)
 	res, err := q.ExecContext(ctx, `
 		DELETE FROM tokens WHERE token = $1

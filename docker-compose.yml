@@ -49,25 +49,46 @@ services:
     volumes:
       - mongodata:/data/db
 
+  # Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - messenger-network
+
   # Auth Service
   auth-service:
     build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./auth-service/Dockerfile
     container_name: auth-service
     ports:
       - "8001:8001"
       - "9001:9001"
+      - "9090:9090"
     environment:
-      - PORT=8001
+      - HTTP_PORT=8001
+      - GRPC_PORT=9001
       - KAFKA_BROKERS=kafka:9092
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=auth_db
+      # Tracing
+      - OTEL_SERVICE_NAME=auth-service
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_ENVIRONMENT=development
+      - OTEL_TRACING_ENABLED=true
     depends_on:
       - kafka
       - postgres
+      - jaeger
     networks:
       - messenger-network
     restart: on-failure
@@ -75,22 +96,30 @@ services:
   # Users Service
   users-service:
     build:
-      context: ./users-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./users-service/Dockerfile
     container_name: users-service
     ports:
       - "8004:8004"
       - "9004:9004"
     environment:
-      - PORT=8004
+      - HTTP_PORT=8004
+      - GRPC_PORT=9004
       - KAFKA_BROKERS=kafka:9092
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=users_db
+      # Tracing
+      - OTEL_SERVICE_NAME=users-service
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_ENVIRONMENT=development
+      - OTEL_TRACING_ENABLED=true
     depends_on:
       - kafka
       - postgres
+      - jaeger
     networks:
       - messenger-network
     restart: on-failure
@@ -98,22 +127,31 @@ services:
   # Friends Service
   friends-service:
     build:
-      context: ./friends-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./friends-service/Dockerfile
     container_name: friends-service
     ports:
       - "8003:8003"
       - "9003:9003"
     environment:
-      - PORT=8003
-      - USERS_SERVICE_ADDR=users-service:9004
+      - HTTP_PORT=8003
+      - GRPC_PORT=9003
+      - USERS_SERVICE_HOST=users-service
+      - USERS_SERVICE_PORT=9004
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
       - POSTGRES_DB=friends_db
+      # Tracing
+      - OTEL_SERVICE_NAME=friends-service
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_ENVIRONMENT=development
+      - OTEL_TRACING_ENABLED=true
     depends_on:
       - users-service
       - postgres
+      - jaeger
     networks:
       - messenger-network
     restart: on-failure
@@ -121,24 +159,32 @@ services:
   # Chat Service
   chat-service:
     build:
-      context: ./chat-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./chat-service/Dockerfile
     container_name: chat-service
     ports:
       - "8002:8002"
       - "9002:9002"
     environment:
-      - PORT=8002
-      - USERS_SERVICE_ADDR=users-service:9004
-      - FRIENDS_SERVICE_ADDR=friends-service:9003
-      - MONGO_HOST=mongo
-      - MONGO_USER=root
-      - MONGO_PASSWORD=root
-      - MONGO_DB=chat_db
+      - HTTP_PORT=8002
+      - GRPC_PORT=9002
+      - USERS_SERVICE_HOST=users-service
+      - USERS_SERVICE_PORT=9004
+      - FRIENDS_SERVICE_HOST=friends-service
+      - FRIENDS_SERVICE_PORT=9003
+      - MONGODB_URI=mongodb://root:root@mongo:27017
+      - MONGODB_DATABASE=chat_db
+      # Tracing
+      - OTEL_SERVICE_NAME=chat-service
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_ENVIRONMENT=development
+      - OTEL_TRACING_ENABLED=true
     depends_on:
       - users-service
       - friends-service
       - mongo
+      - jaeger
     networks:
       - messenger-network
     restart: on-failure

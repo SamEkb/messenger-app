@@ -12,16 +12,16 @@ import (
 )
 
 func (a *UseCase) Login(ctx context.Context, dto *ports.LoginDto) (models.Token, error) {
-	a.logger.Debug("login attempt", "email", dto.Email)
+	a.logger.DebugContext(ctx, "login attempt", "email", dto.Email)
 
 	user, err := a.authRepo.FindUserByEmail(ctx, dto.Email)
 	if err != nil {
-		a.logger.Warn("user not found during login", "email", dto.Email, "error", err)
+		a.logger.WarnContext(ctx, "user not found during login", "email", dto.Email, "error", err.Error())
 		return "", err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password()), []byte(dto.Password)); err != nil {
-		a.logger.Warn("invalid credentials", "email", dto.Email)
+		a.logger.WarnContext(ctx, "invalid credentials", "email", dto.Email)
 		return "", errors.NewUnauthorizedError("invalid credentials").
 			WithDetails("email", dto.Email)
 	}
@@ -32,18 +32,18 @@ func (a *UseCase) Login(ctx context.Context, dto *ports.LoginDto) (models.Token,
 		time.Now().Add(a.tokenTTL),
 	)
 	if err != nil {
-		a.logger.Error("failed to create auth token", "error", err)
+		a.logger.ErrorContext(ctx, "failed to create auth token", "error", err.Error(), "user_id", user.ID().String())
 		return "", errors.NewInternalError(err, "failed to create auth token").
 			WithDetails("user_id", user.ID().String())
 	}
 
 	token, err = a.tokenRepo.Create(ctx, token)
 	if err != nil {
-		a.logger.Error("failed to save token", "error", err)
+		a.logger.ErrorContext(ctx, "failed to save token", "error", err.Error(), "user_id", user.ID().String())
 		return "", errors.NewInternalError(err, "failed to save token").
 			WithDetails("user_id", user.ID().String())
 	}
 
-	a.logger.Info("login successful", "user_id", user.ID(), "token", token.Token())
+	a.logger.InfoContext(ctx, "login successful", "user_id", user.ID().String())
 	return token.Token(), nil
 }

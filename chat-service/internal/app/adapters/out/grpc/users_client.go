@@ -2,8 +2,8 @@ package grpc
 
 import (
 	"context"
-	"time"
 
+	"github.com/SamEkb/messenger-app/chat-service/config/env"
 	"github.com/SamEkb/messenger-app/chat-service/internal/app/ports"
 	users "github.com/SamEkb/messenger-app/pkg/api/users_service/v1"
 	"github.com/SamEkb/messenger-app/pkg/platform/errors"
@@ -14,6 +14,7 @@ import (
 type UsersServiceClientAdapter struct {
 	client users.UsersServiceClient
 	conn   *grpc.ClientConn
+	config *env.ClientsConfig
 }
 
 func (c *UsersServiceClientAdapter) Close() error {
@@ -25,8 +26,8 @@ func (c *UsersServiceClientAdapter) Close() error {
 	return nil
 }
 
-func (c *UsersServiceClientAdapter) GetUserProfile(userID string) (*ports.UserProfile, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (c *UsersServiceClientAdapter) GetUserProfile(ctx context.Context, userID string) (*ports.UserProfile, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.config.UsersClientTimeout)
 	defer cancel()
 
 	req := &users.GetUserProfileRequest{
