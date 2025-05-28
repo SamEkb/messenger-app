@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -119,11 +118,13 @@ func (s *FriendshipServiceServer) RunServers(ctx context.Context) error {
 		addr := s.cfg.GrpcAddr()
 		lis, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Fatalf("gRPC listen error: %v", err)
+			s.logger.ErrorContext(ctx, "gRPC listen error", "error", err)
+			return
 		}
-		log.Printf("gRPC listening on %s", addr)
+		s.logger.InfoContext(ctx, "gRPC listening", "address", addr)
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("gRPC serve error: %v", err)
+			s.logger.ErrorContext(ctx, "gRPC serve error", "error", err)
+			return
 		}
 	}()
 
@@ -132,7 +133,8 @@ func (s *FriendshipServiceServer) RunServers(ctx context.Context) error {
 		defer wg.Done()
 		mux := runtime.NewServeMux()
 		if err := friends.RegisterFriendsServiceHandlerServer(ctx, mux, s); err != nil {
-			log.Fatalf("gateway registration error: %v", err)
+			s.logger.ErrorContext(ctx, "gateway registration error", "error", err)
+			return
 		}
 
 		root := http.NewServeMux()
@@ -147,11 +149,13 @@ func (s *FriendshipServiceServer) RunServers(ctx context.Context) error {
 		}
 		lis, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Fatalf("HTTP listen error: %v", err)
+			s.logger.ErrorContext(ctx, "HTTP listen error", "error", err)
+			return
 		}
-		log.Printf("HTTP listening on %s", addr)
+		s.logger.InfoContext(ctx, "HTTP listening", "address", addr)
 		if err := httpServer.Serve(lis); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("HTTP serve error: %v", err)
+			s.logger.ErrorContext(ctx, "HTTP serve error", "error", err)
+			return
 		}
 	}()
 
